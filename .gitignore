@@ -1,0 +1,22 @@
+# Environnement Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Bases SQLite : recréées par les scripts
+*.db
+*.db-journal
+
+# Archive HDFS : recréée par les scripts
+05_HDFS/archive/
+
+# Éditeurs et système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+~$*
