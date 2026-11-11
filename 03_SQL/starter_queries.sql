@@ -72,3 +72,50 @@ UNION ALL
 SELECT 'safety_observations.location_id', COUNT(*)
 FROM safety_observations o LEFT JOIN locations l ON l.location_id = o.location_id
 WHERE l.location_id IS NULL;
+
+
+-- ---------------------------------------------------------------------
+-- TODO 3 : au moins 2 requêtes GROUP BY qui calculent des KPI
+-- ---------------------------------------------------------------------
+
+-- Q05 : KPI1, incidents par mois (dont graves et near-miss)
+SELECT strftime('%Y-%m', incident_ts) AS mois,
+       COUNT(*) AS nb_incidents,
+       SUM(CASE WHEN severity IN ('HIGH', 'CRITICAL') THEN 1 ELSE 0 END) AS nb_graves,
+       SUM(CASE WHEN incident_type = 'NEAR_MISS' THEN 1 ELSE 0 END) AS nb_near_miss
+FROM incidents
+GROUP BY mois
+ORDER BY mois;
+
+-- Q05 bis : KPI1, moyenne mensuelle sur les mois complets (octobre exclu, il s'arrête au 28)
+SELECT ROUND(AVG(nb_incidents), 1) AS moyenne_incidents_par_mois
+FROM (SELECT strftime('%Y-%m', incident_ts) AS mois, COUNT(*) AS nb_incidents
+      FROM incidents
+      GROUP BY mois)
+WHERE mois < '2026-10';
+
+-- Q06 : KPI2, répartition des incidents par gravité
+SELECT severity,
+       COUNT(*) AS nb_incidents,
+       ROUND(100.0 * COUNT(*) / (SELECT COUNT(*) FROM incidents), 1) AS pct
+FROM incidents
+GROUP BY severity
+ORDER BY CASE severity WHEN 'LOW' THEN 1 WHEN 'MEDIUM' THEN 2 WHEN 'HIGH' THEN 3 ELSE 4 END;
+
+-- Q07 : KPI4, near-miss dans les deux sources
+SELECT 'incidents' AS source, COUNT(*) AS nb_near_miss
+FROM incidents WHERE incident_type = 'NEAR_MISS'
+UNION ALL
+SELECT 'safety_observations', COUNT(*)
+FROM safety_observations WHERE observation_type = 'NEAR_MISS';
+
+-- Q08 : KPI6, taux d'incidents par rôle et par équipe
+-- (incidents du groupe / nombre de travailleurs du groupe)
+SELECT w.role, w.shift,
+       COUNT(DISTINCT w.worker_id) AS nb_travailleurs,
+       COUNT(i.incident_id)        AS nb_incidents,
+       ROUND(1.0 * COUNT(i.incident_id) / COUNT(DISTINCT w.worker_id), 2) AS incidents_par_travailleur
+FROM workers_synthetic w
+LEFT JOIN incidents i ON i.worker_id = w.worker_id
+GROUP BY w.role, w.shift
+ORDER BY incidents_par_travailleur DESC;
