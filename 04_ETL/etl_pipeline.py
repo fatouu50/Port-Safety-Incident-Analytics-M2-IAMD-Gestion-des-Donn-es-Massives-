@@ -8,7 +8,9 @@ Le script crée 04_ETL/project_11_dwh.db. On peut le relancer autant de fois
 qu'on veut : la base est reconstruite à l'identique (idempotence).
 """
 import hashlib
+import os
 import sqlite3
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -19,6 +21,7 @@ import pandas as pd
 DOSSIER_ETL = Path(__file__).resolve().parent
 DOSSIER_DONNEES = DOSSIER_ETL.parent / "01_DATA_RAW"
 BASE = DOSSIER_ETL / "project_11_dwh.db"
+BASE_TEMP = DOSSIER_ETL / "project_11_dwh.tmp.db"   # base en construction (voir rollback)
 
 # Les 5 sources, référentiels d'abord (même ordre que 03_SQL)
 TABLES = ["locations", "workers_synthetic", "equipment", "incidents", "safety_observations"]
@@ -48,11 +51,45 @@ if BASE.exists():
         pass
     ancienne.close()
 
-# 2. Repartir d'une base vide (reproductibilité)
-if BASE.exists():
-    BASE.unlink()
+# 2. Construire dans un fichier temporaire (reproductibilité et rollback).
+# La vraie base n'est remplacée qu'à la toute fin, si tout a réussi :
+# en cas de panne, l'ancienne base reste intacte (tout ou rien).
+if BASE_TEMP.exists():
+    BASE_TEMP.unlink()
 
-con = sqlite3.connect(BASE)
+COLONNES_JOURNAL = ["run_id", "debut", "fin", "duree_s", "statut", "nb_raw", "nb_staging", "nb_rejets",
+                    "nb_faits", "nb_lignes_mart", "nb_alertes", "nb_echecs", "message"]
+
+
+def echec_du_run(type_erreur, erreur, trace):
+    """Appelée par Python si le pipeline plante : ROLLBACK.
+    On supprime la base temporaire, la base précédente n'est pas touchée,
+    et on note le run en ECHEC dans etl_run_log."""
+    try:
+        if globals().get("con") is not None:
+            con.close()
+        if BASE_TEMP.exists():
+            BASE_TEMP.unlink()
+        fin = datetime.now()
+        echec = pd.DataFrame([[RUN_ID, DEBUT.strftime("%Y-%m-%d %H:%M:%S"), fin.strftime("%Y-%m-%d %H:%M:%S"),
+                               round((fin - DEBUT).total_seconds(), 2), "ECHEC",
+                               None, None, None, None, None, None, None,
+                               f"{type_erreur.__name__} : {erreur}"]], columns=COLONNES_JOURNAL)
+        if journal_precedent is not None:
+            echec = pd.concat([journal_precedent, echec], ignore_index=True)
+        base_journal = sqlite3.connect(BASE)
+        echec.to_sql("etl_run_log", base_journal, index=False, if_exists="replace")
+        base_journal.close()
+        print()
+        print("ECHEC du run : rollback, la base précédente est conservée, échec noté dans etl_run_log.")
+    except Exception as probleme:
+        print("Rollback incomplet :", probleme)
+    sys.__excepthook__(type_erreur, erreur, trace)
+
+
+sys.excepthook = echec_du_run
+
+con = sqlite3.connect(BASE_TEMP)
 
 
 # ---------------------------------------------------------------------
@@ -561,8 +598,17 @@ FAITS = {
 }
 
 
-def afficher_controle(libelle, ok, detail):
-    print(f"  {libelle:<44} {detail:<28} : {'OK' if ok else 'ERREUR'}")
+ERREURS_CONTROLE = []   # contrôles critiques en échec : ils bloquent la publication de la base
+
+
+def afficher_controle(libelle, ok, detail, bloquant=True):
+    """bloquant=True : un échec arrête le run (rollback). bloquant=False : simple information,
+    utilisé pour les chiffres de référence du jeu officiel, qui changent légitimement si des
+    lignes sont rejetées ou si les données évoluent."""
+    etat = "OK" if ok else ("ERREUR" if bloquant else "ÉCART (info)")
+    print(f"  {libelle:<44} {detail:<28} : {etat}")
+    if not ok and bloquant:
+        ERREURS_CONTROLE.append(libelle)
 
 
 for fait, p in FAITS.items():
@@ -735,38 +781,41 @@ for nom, nb_lignes_affichees in [("mart_incidents_month", 10), ("mart_severity_d
 
 # Contrôles des MART : chiffres attendus
 print()
-print("Contrôles des MART :")
+print("Contrôles des MART (les chiffres « attendu » sont ceux du jeu officiel : un écart y est informatif) :")
 
 
 def valeur(requete):
     return con.execute(requete).fetchone()[0]
 
 
+nb_faits_incidents = valeur("SELECT COUNT(*) FROM fact_incident")
 moyenne_kpi1 = valeur("SELECT ROUND(AVG(nb_incidents), 1) FROM mart_incidents_month WHERE mois_complet = 1")
 nb_mois_complets = valeur("SELECT COUNT(*) FROM mart_incidents_month WHERE mois_complet = 1")
 afficher_controle("KPI1 moyenne des mois complets", moyenne_kpi1 == 144.0,
-                  f"{moyenne_kpi1} ({nb_mois_complets} mois), attendu 144,0")
+                  f"{moyenne_kpi1} ({nb_mois_complets} mois), attendu 144,0", bloquant=False)
 oct_complet = valeur("SELECT mois_complet FROM mart_incidents_month WHERE mois = '2026-10'")
-afficher_controle("Octobre exclu (mois_complet = 0)", oct_complet == 0, f"mois_complet = {oct_complet}")
-afficher_controle("Total incidents par mois = 1400",
-                  valeur("SELECT SUM(nb_incidents) FROM mart_incidents_month") == 1400, "")
+afficher_controle("Octobre exclu (mois_complet = 0)", oct_complet == 0, f"mois_complet = {oct_complet}", bloquant=False)
+afficher_controle("Total incidents par mois = nombre de faits",
+                  valeur("SELECT SUM(nb_incidents) FROM mart_incidents_month") == nb_faits_incidents,
+                  f"{nb_faits_incidents} faits")
 pct_graves = valeur("SELECT ROUND(100.0 * SUM(nb_graves) / SUM(nb_incidents), 1) FROM mart_incidents_month")
-afficher_controle("Incidents graves", pct_graves == 22.3, f"{pct_graves} %, attendu 22,3 %")
-afficher_controle("Total par gravité = 1400",
-                  valeur("SELECT SUM(nb_incidents) FROM mart_severity_distribution") == 1400, "")
-afficher_controle("Total par zone = 1400",
-                  valeur("SELECT SUM(nb_incidents) FROM mart_incidents_by_area") == 1400, "")
+afficher_controle("Incidents graves", pct_graves == 22.3, f"{pct_graves} %, attendu 22,3 %", bloquant=False)
+afficher_controle("Total par gravité = nombre de faits",
+                  valeur("SELECT SUM(nb_incidents) FROM mart_severity_distribution") == nb_faits_incidents, "")
+afficher_controle("Total par zone = nombre de faits",
+                  valeur("SELECT SUM(nb_incidents) FROM mart_incidents_by_area") == nb_faits_incidents, "")
 nm_total = valeur("SELECT SUM(near_miss_total) FROM mart_near_miss")
-afficher_controle("Near-miss 225 + 534", nm_total == 759, f"{nm_total}, attendu 759")
+afficher_controle("Near-miss 225 + 534", nm_total == 759, f"{nm_total}, attendu 759", bloquant=False)
 spill = valeur("SELECT pct FROM mart_recurring_incident_type WHERE incident_type = 'SPILL' AND rang = 1")
-afficher_controle("SPILL type le plus fréquent", spill == 18.1, f"{spill} %, attendu 18,1 %")
+afficher_controle("SPILL type le plus fréquent", spill == 18.1, f"{spill} %, attendu 18,1 %", bloquant=False)
 operateur_a = valeur("SELECT incidents_par_travailleur FROM mart_incident_rate_shift_role "
                      "WHERE role = 'OPERATOR' AND shift = 'A'")
-afficher_controle("OPERATOR équipe A", operateur_a == 4.84, f"{operateur_a}, attendu 4,84")
-afficher_controle("Effectif total = 350",
-                  valeur("SELECT SUM(nb_travailleurs) FROM mart_incident_rate_shift_role") == 350, "")
-afficher_controle("Incidents par rôle/équipe = 1400",
-                  valeur("SELECT SUM(nb_incidents) FROM mart_incident_rate_shift_role") == 1400, "")
+afficher_controle("OPERATOR équipe A", operateur_a == 4.84, f"{operateur_a}, attendu 4,84", bloquant=False)
+afficher_controle("Effectif total = nombre de travailleurs (dim_worker)",
+                  valeur("SELECT SUM(nb_travailleurs) FROM mart_incident_rate_shift_role")
+                  == valeur("SELECT COUNT(*) FROM dim_worker"), "")
+afficher_controle("Incidents par rôle/équipe = nombre de faits",
+                  valeur("SELECT SUM(nb_incidents) FROM mart_incident_rate_shift_role") == nb_faits_incidents, "")
 
 # Confidentialité : aucune colonne d'identifiant de travailleur dans les MART
 colonnes_interdites = 0
@@ -839,7 +888,7 @@ for kpi_id, attendu, nom in [("KPI1", 144.0, "Moyenne mensuelle (mois complets)"
                              ("KPI5", 18.1, "SPILL, type le plus fréquent (%)"),
                              ("KPI6", 4.84, "OPERATOR équipe A (incidents/travailleur)")]:
     obtenu = valeur(f"SELECT valeur FROM mart_kpi_summary WHERE kpi_id = '{kpi_id}'")
-    afficher_controle(f"{kpi_id} {nom}", obtenu == attendu, f"{obtenu}, attendu {attendu}")
+    afficher_controle(f"{kpi_id} {nom}", obtenu == attendu, f"{obtenu}, attendu {attendu}", bloquant=False)
 afficher_controle("8 KPI présents, aucun vide",
                   valeur("SELECT COUNT(*) FROM mart_kpi_summary WHERE valeur IS NOT NULL") == 8, "")
 
@@ -916,6 +965,13 @@ print(pd.read_sql("SELECT regle, table_name, nb_controles, nb_echecs, statut, de
                   "WHERE regle IN ('DQ08', 'DQ09', 'DQ10', 'DQ12') ORDER BY regle, table_name", con
                   ).to_string(index=False))
 
+# Verrou : si un contrôle critique a échoué, on s'arrête ici.
+# L'exception déclenche le rollback (echec_du_run) : rien n'est publié.
+echecs_dq08 = [r[2] for r in resultats_monitoring if r[1] == "DQ08" and r[5] == "ECHEC"]
+if ERREURS_CONTROLE or echecs_dq08:
+    raise RuntimeError("contrôle(s) critique(s) en échec : "
+                       + "; ".join(ERREURS_CONTROLE + [f"DQ08 {t}" for t in echecs_dq08]))
+
 # Journal des runs : volumes, durée, statut. L'historique des runs précédents est conservé.
 FIN = datetime.now()
 journal = pd.DataFrame([[
@@ -931,8 +987,8 @@ journal = pd.DataFrame([[
     sum(valeur(f"SELECT COUNT(*) FROM {nom}") for nom in list(MARTS) + ["mart_kpi_summary"]),
     valeur("SELECT COUNT(*) FROM dq_results WHERE statut = 'ALERTE'"),
     valeur("SELECT COUNT(*) FROM dq_results WHERE statut IN ('ECHEC', 'REJETS')"),
-]], columns=["run_id", "debut", "fin", "duree_s", "statut", "nb_raw", "nb_staging", "nb_rejets",
-             "nb_faits", "nb_lignes_mart", "nb_alertes", "nb_echecs"])
+    "",                                            # message (rempli seulement en cas d'ECHEC)
+]], columns=COLONNES_JOURNAL)
 if journal_precedent is not None:
     journal = pd.concat([journal_precedent, journal], ignore_index=True)
 journal.to_sql("etl_run_log", con, index=False, if_exists="replace")
@@ -941,6 +997,10 @@ print()
 print(f"Journal etl_run_log ({len(journal)} run(s) enregistré(s)) :")
 print(journal.tail(3).to_string(index=False))
 
+# Publication : tout a réussi, la base temporaire remplace la base précédente
 con.commit()
 con.close()
+os.replace(BASE_TEMP, BASE)
+print()
+print("Base publiée :", BASE.name)
 
