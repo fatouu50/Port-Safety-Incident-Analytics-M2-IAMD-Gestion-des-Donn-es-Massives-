@@ -1,0 +1,16 @@
+SOURCES PORTUAIRES
+(SQL / CSV / JSON / API / IoT)
+          |
+          v
+HDFS / S3 (stockage distribué / historique)
+          |
+          v
+INGESTION / ETL-ELT
+          |
+          v
+DWH [RAW -> STAGING -> CORE -> MART]
+          |
+          +--> BI / IA / KPI
+          +--> Python / EDA / analyses métier
+
+A compléter par le groupe : flux, contrôles qualité, sécurité, lineage, responsabilités et fréquence de mise à jour.
