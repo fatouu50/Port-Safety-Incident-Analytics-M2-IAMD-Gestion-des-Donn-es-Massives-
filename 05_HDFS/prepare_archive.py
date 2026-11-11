@@ -56,3 +56,23 @@ for (annee, mois), partie in incidents.groupby(["annee", "mois"]):
     partie.drop(columns=["annee", "mois"]).to_csv(fichier, index=False)
 
     print(f"  {fichier.relative_to(ARCHIVE)} : {len(partie)} lignes")
+
+
+    
+# ---------------------------------------------------------------------
+# Étape 2.4 : écrire les observations, un fichier par mois
+# ---------------------------------------------------------------------
+observations = pd.read_csv(DOSSIER_01_DATA_RAW / "safety_observations.csv")
+
+dates = pd.to_datetime(observations["observation_ts"])
+observations["annee"] = dates.dt.strftime("%Y")
+observations["mois"] = dates.dt.strftime("%m")
+
+for (annee, mois), partie in observations.groupby(["annee", "mois"]):
+    dossier = ARCHIVE / "raw" / "safety_observations" / f"year={annee}" / f"month={mois}"
+    dossier.mkdir(parents=True, exist_ok=True)
+
+    fichier = dossier / f"safety_observations_{annee}_{mois}.csv"
+    partie.drop(columns=["annee", "mois"]).to_csv(fichier, index=False)
+
+    print(f"  {fichier.relative_to(ARCHIVE)} : {len(partie)} lignes")
