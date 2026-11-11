@@ -758,7 +758,72 @@ for nom in MARTS:
 afficher_controle("Aucun worker_id dans les MART", colonnes_interdites == 0,
                   f"{colonnes_interdites} colonne(s) interdite(s)")
 
+
+# ---------------------------------------------------------------------
+# Étape 5.6 : mart_kpi_summary, les 8 KPI en une seule table
+# ---------------------------------------------------------------------
+# Cette table ne recalcule rien depuis les faits : elle reprend les chiffres
+# des autres MART. Le dashboard lira ses 8 cartes ici.
+print()
+print("MART : mart_kpi_summary")
+
+zone_top = con.execute("SELECT location_id, area_type, score_risque FROM mart_incidents_by_area "
+                       "ORDER BY score_risque DESC, location_id LIMIT 1").fetchone()
+type_top = con.execute("SELECT incident_type, nb_incidents, pct FROM mart_recurring_incident_type "
+                       "WHERE rang = 1 ORDER BY incident_type LIMIT 1").fetchone()
+groupe_top = con.execute("SELECT role, shift, incidents_par_travailleur FROM mart_incident_rate_shift_role "
+                         "ORDER BY incidents_par_travailleur DESC, role, shift LIMIT 1").fetchone()
+
+lignes_kpi = [
+    ["KPI1", "Incidents/month",
+     "Moyenne mensuelle des incidents sur les mois complets (octobre exclu, il s'arrête au 28)",
+     valeur("SELECT ROUND(AVG(nb_incidents), 1) FROM mart_incidents_month WHERE mois_complet = 1"),
+     "incidents/mois"],
+    ["KPI2", "Severity distribution",
+     "Part des incidents graves (gravité HIGH ou CRITICAL)",
+     valeur("SELECT ROUND(100.0 * SUM(nb_graves) / SUM(nb_incidents), 1) FROM mart_incidents_month"),
+     "%"],
+    ["KPI3", "Incidents by area",
+     f"Score de risque de la zone la plus à risque : {zone_top[0]} ({zone_top[1]})",
+     zone_top[2], "score /100"],
+    ["KPI4", "Near-miss count",
+     "Presque-accidents : incidents NEAR_MISS + observations NEAR_MISS",
+     valeur("SELECT SUM(near_miss_total) FROM mart_near_miss"),
+     "near-miss"],
+    ["KPI5", "Recurring incident type",
+     f"Part du type d'incident le plus fréquent : {type_top[0]} ({type_top[1]} incidents)",
+     type_top[2], "%"],
+    ["KPI6", "Incident rate by shift/role",
+     f"Incidents par travailleur du groupe le plus touché : {groupe_top[0]}, équipe {groupe_top[1]} "
+     "(par effectif, faute d'heures travaillées)",
+     groupe_top[2], "incidents/travailleur"],
+    ["KPI7", "Unsafe observations",
+     "Part des observations de terrain classées UNSAFE",
+     valeur("SELECT ROUND(100.0 * SUM(nb_unsafe) / SUM(nb_observations), 1) FROM mart_incidents_by_area"),
+     "%"],
+    ["KPI8", "Total incidents",
+     "Nombre d'incidents chargés dans le DWH (contrôle de réconciliation)",
+     valeur("SELECT SUM(nb_incidents) FROM mart_severity_distribution"),
+     "incidents"],
+]
+kpi_summary = pd.DataFrame(lignes_kpi, columns=["kpi_id", "kpi", "libelle", "valeur", "unite"])
+kpi_summary["valeur"] = kpi_summary["valeur"].astype(float)
+kpi_summary.to_sql("mart_kpi_summary", con, index=False, if_exists="replace")
+
+print(pd.read_sql("SELECT kpi_id, kpi, valeur, unite FROM mart_kpi_summary", con).to_string(index=False))
+
+print()
+print("Les 5 chiffres de contrôle, lus dans mart_kpi_summary :")
+for kpi_id, attendu, nom in [("KPI1", 144.0, "Moyenne mensuelle (mois complets)"),
+                             ("KPI2", 22.3, "Incidents graves (%)"),
+                             ("KPI4", 759.0, "Near-miss (225 + 534)"),
+                             ("KPI5", 18.1, "SPILL, type le plus fréquent (%)"),
+                             ("KPI6", 4.84, "OPERATOR équipe A (incidents/travailleur)")]:
+    obtenu = valeur(f"SELECT valeur FROM mart_kpi_summary WHERE kpi_id = '{kpi_id}'")
+    afficher_controle(f"{kpi_id} {nom}", obtenu == attendu, f"{obtenu}, attendu {attendu}")
+afficher_controle("8 KPI présents, aucun vide",
+                  valeur("SELECT COUNT(*) FROM mart_kpi_summary WHERE valeur IS NOT NULL") == 8, "")
+
 con.commit()
 con.close()
 
-# TODO 5.6 MART : mart_kpi_summary
