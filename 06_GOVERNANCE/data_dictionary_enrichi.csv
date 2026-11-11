@@ -1,0 +1,149 @@
+couche,objet,colonne,type,description,exemple,cle,nullable,classification,identifiant_individuel,regles_dq,remarque
+SOURCE (RAW et STAGING),locations.csv,location_id,TEXT,Identifiant de la zone du port,LOC001,PK,NON,Confidentiel,NON,DQ02;DQ03;DQ04,Format LOC + 3 chiffres
+SOURCE (RAW et STAGING),locations.csv,area_type,TEXT,Type de zone,BERTH,,NON,Confidentiel,NON,DQ02;DQ06,BERTH|GATE|RAIL|WORKSHOP|YARD
+SOURCE (RAW et STAGING),locations.csv,area_name,TEXT,Nom de la zone,AREA_01,,NON,Confidentiel,NON,DQ02,
+SOURCE (RAW et STAGING),workers_synthetic.csv,worker_id,TEXT,Identifiant du travailleur (synthétique),W0001,PK,NON,Confidentiel,OUI,DQ02;DQ03;DQ04,Format W + 4 chiffres; identifiant individuel (pseudonyme)
+SOURCE (RAW et STAGING),workers_synthetic.csv,role,TEXT,Rôle du travailleur,SUPERVISOR,,NON,Confidentiel,NON,DQ02;DQ06,SUPERVISOR|OPERATOR|TECHNICIAN|DRIVER
+SOURCE (RAW et STAGING),workers_synthetic.csv,shift,TEXT,Équipe du travailleur,A,,NON,Confidentiel,NON,DQ02;DQ06,"A|B|C; équipe de la fiche travailleur, non déduite de l'heure de l'incident"
+SOURCE (RAW et STAGING),incidents.csv,incident_id,TEXT,Identifiant de l'incident,INC000001,PK,NON,Confidentiel,NON,DQ02;DQ03;DQ04,Format INC + 6 chiffres
+SOURCE (RAW et STAGING),incidents.csv,incident_ts,TEXT,Date et heure de l'incident,2026-06-02 21:17:43,,NON,Confidentiel,NON,DQ02;DQ05,AAAA-MM-JJ HH:MM:SS; période du 1er janvier au 28 octobre 2026 (octobre incomplet)
+SOURCE (RAW et STAGING),incidents.csv,location_id,TEXT,Zone où l'incident a eu lieu,LOC016,FK locations.location_id,NON,Confidentiel,NON,DQ02;DQ04;DQ07,
+SOURCE (RAW et STAGING),incidents.csv,equipment_id,TEXT,Engin impliqué,CHE34,FK equipment.equipment_id,NON,Confidentiel,NON,DQ02;DQ04;DQ07,
+SOURCE (RAW et STAGING),incidents.csv,severity,TEXT,Gravité de l'incident,LOW,,NON,Confidentiel,NON,DQ02;DQ06,LOW|MEDIUM|HIGH|CRITICAL; grave = HIGH ou CRITICAL (hypothèse H2)
+SOURCE (RAW et STAGING),incidents.csv,incident_type,TEXT,Type d'incident,FALL,,NON,Confidentiel,NON,DQ02;DQ06,COLLISION|EQUIPMENT|FALL|NEAR_MISS|PPE|SPILL; NEAR_MISS existe aussi dans safety_observations
+SOURCE (RAW et STAGING),incidents.csv,worker_id,TEXT,Travailleur concerné,W0055,FK workers_synthetic.worker_id,NON,Confidentiel,OUI,DQ02;DQ04;DQ07,Identifiant individuel (pseudonyme)
+SOURCE (RAW et STAGING),safety_observations.csv,observation_id,INTEGER,Identifiant de l'observation de sécurité,1,PK,NON,Confidentiel,NON,DQ02;DQ03;DQ04,Entier
+SOURCE (RAW et STAGING),safety_observations.csv,observation_ts,TEXT,Date et heure de l'observation,2026-05-04 15:58:12,,NON,Confidentiel,NON,DQ02;DQ05,AAAA-MM-JJ HH:MM:SS
+SOURCE (RAW et STAGING),safety_observations.csv,location_id,TEXT,Zone observée,LOC006,FK locations.location_id,NON,Confidentiel,NON,DQ02;DQ04;DQ07,
+SOURCE (RAW et STAGING),safety_observations.csv,observation_type,TEXT,Résultat de l'observation,SAFE,,NON,Confidentiel,NON,DQ02;DQ06,SAFE|UNSAFE|NEAR_MISS
+SOURCE (RAW et STAGING),safety_observations.csv,reported_by_role,TEXT,Rôle de la personne qui déclare,SUPERVISOR,,NON,Confidentiel,NON,DQ02;DQ06,OPERATOR|SUPERVISOR|HSE; différent du rôle du travailleur
+SOURCE (RAW et STAGING),equipment.csv,equipment_id,TEXT,Identifiant de l'engin de manutention,CHE01,PK,NON,Confidentiel,NON,DQ02;DQ03;DQ04,Format CHE + 2 chiffres
+SOURCE (RAW et STAGING),equipment.csv,equipment_type,TEXT,Type d'engin,RMG,,NON,Confidentiel,NON,DQ02;DQ06,RMG|RTG|TT|FL|RS
+SOURCE (RAW et STAGING),equipment.csv,home_area,TEXT,Zone de rattachement de l'engin (code Yxx),Y04,,NON,Confidentiel,NON,DQ02;DQ11,Ne correspond à aucune location_id (40 engins sur 40); non utilisée en jointure
+RAW et STAGING,raw_* / stg_*,_source_file,TEXT,Fichier source de la ligne,incidents.csv,,NON,Confidentiel,NON,n/a,Colonne de traçabilité ajoutée par le pipeline
+RAW et STAGING,raw_* / stg_*,_row_num,INTEGER,Numéro de la ligne dans le fichier source (l'en-tête est la ligne 1),2,,NON,Confidentiel,NON,n/a,Permet de retrouver la ligne d'origine
+RAW et STAGING,raw_* / stg_*,_run_id,TEXT,Identifiant du run qui a chargé la ligne (AAAAMMJJ_HHMMSS),20261111_213350,,NON,Confidentiel,NON,n/a,
+CORE,dim_date,date_key,INTEGER,Clé de substitution : date au format AAAAMMJJ,20260101,PK,NON,Confidentiel,NON,n/a,
+CORE,dim_date,full_date,TEXT,Date complète AAAA-MM-JJ,2026-01-01,,NON,Confidentiel,NON,n/a,
+CORE,dim_date,year,INTEGER,Année,2026,,NON,Confidentiel,NON,n/a,
+CORE,dim_date,month,INTEGER,Numéro du mois (1 à 12),1,,NON,Confidentiel,NON,n/a,
+CORE,dim_date,day,INTEGER,Jour du mois,1,,NON,Confidentiel,NON,n/a,
+CORE,dim_date,year_month,TEXT,Mois au format AAAA-MM,2026-01,,NON,Confidentiel,NON,n/a,Clé des regroupements mensuels
+CORE,dim_date,month_name,TEXT,Nom du mois en français,janvier,,NON,Confidentiel,NON,n/a,
+CORE,dim_date,day_of_week,INTEGER,"Jour de la semaine (1 = lundi, 7 = dimanche)",4,,NON,Confidentiel,NON,n/a,
+CORE,dim_date,days_in_month,INTEGER,Nombre de jours du mois civil,31,,NON,Confidentiel,NON,n/a,"Sert à savoir si un mois est complet (octobre : 31 jours dans le mois, 28 couverts)"
+CORE,dim_hour,hour_key,INTEGER,Clé de substitution : heure de 0 à 23,0,PK,NON,Confidentiel,NON,n/a,
+CORE,dim_hour,hour_label,TEXT,Heure au format HH:00,00:00,,NON,Confidentiel,NON,n/a,
+CORE,dim_hour,time_band,TEXT,Tranche horaire,NUIT,,NON,Confidentiel,NON,n/a,NUIT 0-5; MATIN 6-11; APRES_MIDI 12-17; SOIR 18-23 (hypothèse H3)
+CORE,dim_location,location_key,INTEGER,Clé de substitution de la zone,1,PK,NON,Confidentiel,NON,n/a,Attribuée dans l'ordre de location_id
+CORE,dim_location,location_id,TEXT,Identifiant métier de la zone,LOC001,,NON,Confidentiel,NON,n/a,Unique
+CORE,dim_location,area_type,TEXT,Type de zone,BERTH,,NON,Confidentiel,NON,n/a,BERTH|GATE|RAIL|WORKSHOP|YARD
+CORE,dim_location,area_name,TEXT,Nom de la zone,AREA_01,,NON,Confidentiel,NON,n/a,
+CORE,dim_equipment,equipment_key,INTEGER,Clé de substitution de l'engin,1,PK,NON,Confidentiel,NON,n/a,Attribuée dans l'ordre de equipment_id
+CORE,dim_equipment,equipment_id,TEXT,Identifiant métier de l'engin,CHE01,,NON,Confidentiel,NON,n/a,Unique
+CORE,dim_equipment,equipment_type,TEXT,Type d'engin,RMG,,NON,Confidentiel,NON,n/a,RMG|RTG|TT|FL|RS
+CORE,dim_equipment,home_area,TEXT,Zone de rattachement (code Yxx),Y04,,NON,Confidentiel,NON,n/a,Aucune correspondance avec location_id (hypothèse H4); simple attribut
+CORE,dim_worker,worker_key,INTEGER,Clé de substitution du travailleur,1,PK,NON,Confidentiel,OUI,n/a,Table la plus sensible : jamais exposée dans les MART
+CORE,dim_worker,worker_id,TEXT,Identifiant métier du travailleur (synthétique),W0001,,NON,Confidentiel,OUI,n/a,Unique; identifiant individuel (pseudonyme)
+CORE,dim_worker,role,TEXT,Rôle du travailleur,SUPERVISOR,,NON,Confidentiel,NON,n/a,SUPERVISOR|OPERATOR|TECHNICIAN|DRIVER
+CORE,dim_worker,shift,TEXT,Équipe du travailleur,A,,NON,Confidentiel,NON,n/a,A|B|C
+CORE,dim_incident_type,incident_type_key,INTEGER,Clé de substitution du type d'incident,1,PK,NON,Confidentiel,NON,n/a,Ordre alphabétique
+CORE,dim_incident_type,incident_type,TEXT,Type d'incident,COLLISION,,NON,Confidentiel,NON,n/a,COLLISION|EQUIPMENT|FALL|NEAR_MISS|PPE|SPILL
+CORE,dim_incident_type,is_near_miss,INTEGER,"1 si le type est NEAR_MISS, sinon 0",0,,NON,Confidentiel,NON,n/a,
+CORE,dim_severity,severity_key,INTEGER,Clé de substitution de la gravité,1,PK,NON,Confidentiel,NON,n/a,Ordre de gravité : 1 = LOW à 4 = CRITICAL
+CORE,dim_severity,severity,TEXT,Niveau de gravité,LOW,,NON,Confidentiel,NON,n/a,LOW|MEDIUM|HIGH|CRITICAL
+CORE,dim_severity,severity_weight,INTEGER,Poids de la gravité (1 à 4),1,,NON,Confidentiel,NON,n/a,Hypothèse H1 : le dictionnaire du prof ne donne aucun poids
+CORE,dim_severity,is_serious,INTEGER,"1 si la gravité est HIGH ou CRITICAL, sinon 0",0,,NON,Confidentiel,NON,n/a,Hypothèse H2 : définition de « grave »
+CORE,dim_observation_type,observation_type_key,INTEGER,Clé de substitution du type d'observation,1,PK,NON,Confidentiel,NON,n/a,Ordre alphabétique
+CORE,dim_observation_type,observation_type,TEXT,Type d'observation,NEAR_MISS,,NON,Confidentiel,NON,n/a,NEAR_MISS|SAFE|UNSAFE
+CORE,dim_reporter_role,reporter_role_key,INTEGER,Clé de substitution du rôle du déclarant,1,PK,NON,Confidentiel,NON,n/a,Ordre alphabétique
+CORE,dim_reporter_role,reporter_role,TEXT,Rôle de la personne qui déclare l'observation,HSE,,NON,Confidentiel,NON,n/a,HSE|OPERATOR|SUPERVISOR
+CORE,fact_incident,incident_id,TEXT,Identifiant de l'incident (dimension dégénérée),INC000001,PK,NON,Confidentiel,NON,n/a,Grain : 1 ligne = 1 incident
+CORE,fact_incident,date_key,INTEGER,Jour de l'incident,20260602,FK dim_date.date_key,NON,Confidentiel,NON,n/a,
+CORE,fact_incident,hour_key,INTEGER,Heure de l'incident,21,FK dim_hour.hour_key,NON,Confidentiel,NON,n/a,
+CORE,fact_incident,location_key,INTEGER,Zone de l'incident,16,FK dim_location.location_key,NON,Confidentiel,NON,n/a,
+CORE,fact_incident,equipment_key,INTEGER,Engin impliqué,34,FK dim_equipment.equipment_key,NON,Confidentiel,NON,n/a,
+CORE,fact_incident,worker_key,INTEGER,Travailleur concerné,55,FK dim_worker.worker_key,NON,Confidentiel,OUI,n/a,Permet de suivre un individu : confidentiel
+CORE,fact_incident,incident_type_key,INTEGER,Type d'incident,3,FK dim_incident_type.incident_type_key,NON,Confidentiel,NON,n/a,
+CORE,fact_incident,severity_key,INTEGER,Gravité,1,FK dim_severity.severity_key,NON,Confidentiel,NON,n/a,
+CORE,fact_incident,incident_count,INTEGER,Mesure de comptage : toujours 1,1,,NON,Confidentiel,NON,n/a,Mesure additive : SUM donne le nombre d'incidents
+CORE,fact_incident,is_serious,INTEGER,1 si l'incident est grave (HIGH ou CRITICAL),0,,NON,Confidentiel,NON,n/a,Lu dans dim_severity
+CORE,fact_incident,is_near_miss,INTEGER,1 si l'incident est un NEAR_MISS,0,,NON,Confidentiel,NON,n/a,Lu dans dim_incident_type
+CORE,fact_incident,severity_weight,INTEGER,Poids de la gravité (1 à 4),1,,NON,Confidentiel,NON,n/a,Hypothèse H1
+CORE,fact_safety_observation,observation_id,INTEGER,Identifiant de l'observation (dimension dégénérée),1,PK,NON,Confidentiel,NON,n/a,Grain : 1 ligne = 1 observation
+CORE,fact_safety_observation,date_key,INTEGER,Jour de l'observation,20260504,FK dim_date.date_key,NON,Confidentiel,NON,n/a,
+CORE,fact_safety_observation,hour_key,INTEGER,Heure de l'observation,15,FK dim_hour.hour_key,NON,Confidentiel,NON,n/a,
+CORE,fact_safety_observation,location_key,INTEGER,Zone observée,6,FK dim_location.location_key,NON,Confidentiel,NON,n/a,
+CORE,fact_safety_observation,observation_type_key,INTEGER,Type d'observation,2,FK dim_observation_type.observation_type_key,NON,Confidentiel,NON,n/a,
+CORE,fact_safety_observation,reporter_role_key,INTEGER,Rôle du déclarant,3,FK dim_reporter_role.reporter_role_key,NON,Confidentiel,NON,n/a,
+CORE,fact_safety_observation,observation_count,INTEGER,Mesure de comptage : toujours 1,1,,NON,Confidentiel,NON,n/a,Mesure additive
+CORE,fact_safety_observation,is_unsafe,INTEGER,1 si l'observation est UNSAFE,0,,NON,Confidentiel,NON,n/a,
+CORE,fact_safety_observation,is_near_miss,INTEGER,1 si l'observation est un NEAR_MISS,0,,NON,Confidentiel,NON,n/a,
+MART,mart_incidents_month,mois,TEXT,Mois au format AAAA-MM,2026-01,PK,NON,Interne,NON,n/a,
+MART,mart_incidents_month,nb_incidents,INTEGER,Nombre d'incidents du mois,138,,NON,Interne,NON,n/a,
+MART,mart_incidents_month,nb_graves,INTEGER,Nombre d'incidents graves (HIGH ou CRITICAL),27,,NON,Interne,NON,n/a,
+MART,mart_incidents_month,pct_graves,REAL,"Part des incidents graves, en %",19.6,,NON,Interne,NON,n/a,Arrondi à 1 décimale
+MART,mart_incidents_month,nb_near_miss,INTEGER,Nombre d'incidents de type NEAR_MISS,26,,NON,Interne,NON,n/a,Sans les observations (voir mart_near_miss)
+MART,mart_incidents_month,jours_couverts,INTEGER,Nombre de jours du mois couverts par les données,31,,NON,Interne,NON,n/a,Octobre : 28
+MART,mart_incidents_month,mois_complet,INTEGER,"1 si tous les jours du mois sont couverts, sinon 0",1,,NON,Interne,NON,n/a,KPI1 = moyenne sur les mois où mois_complet = 1
+MART,mart_severity_distribution,severity,TEXT,Niveau de gravité,LOW,PK,NON,Interne,NON,n/a,Dans l'ordre LOW à CRITICAL
+MART,mart_severity_distribution,nb_incidents,INTEGER,Nombre d'incidents de cette gravité,663,,NON,Interne,NON,n/a,
+MART,mart_severity_distribution,pct,REAL,"Part du total des incidents, en %",47.4,,NON,Interne,NON,n/a,
+MART,mart_incidents_by_area,location_id,TEXT,Identifiant de la zone,LOC015,PK,NON,Interne,NON,n/a,"Identifiant de zone, pas de travailleur"
+MART,mart_incidents_by_area,area_type,TEXT,Type de zone,YARD,,NON,Interne,NON,n/a,
+MART,mart_incidents_by_area,nb_incidents,INTEGER,Nombre d'incidents dans la zone,66,,NON,Interne,NON,n/a,
+MART,mart_incidents_by_area,nb_graves,INTEGER,Nombre d'incidents graves dans la zone,20,,NON,Interne,NON,n/a,
+MART,mart_incidents_by_area,nb_observations,INTEGER,Nombre d'observations de sécurité dans la zone,121,,NON,Interne,NON,n/a,
+MART,mart_incidents_by_area,nb_unsafe,INTEGER,Nombre d'observations UNSAFE dans la zone,34,,NON,Interne,NON,n/a,
+MART,mart_incidents_by_area,pct_unsafe,REAL,"Part des observations UNSAFE, en %",28.1,,NON,Interne,NON,n/a,
+MART,mart_incidents_by_area,score_risque,REAL,"Score de risque de la zone, de 0 à 100",95.4,,NON,Interne,NON,n/a,"100 x (0,5 x graves + 0,3 x volume + 0,2 x % unsafe), chacun divisé par son maximum; formule à confirmer avec Fatouma"
+MART,mart_near_miss,mois,TEXT,Mois au format AAAA-MM,2026-01,PK,NON,Interne,NON,n/a,
+MART,mart_near_miss,near_miss_incidents,INTEGER,Near-miss enregistrés dans les incidents,26,,NON,Interne,NON,n/a,Total 225
+MART,mart_near_miss,near_miss_observations,INTEGER,Near-miss enregistrés dans les observations,54,,NON,Interne,NON,n/a,Total 534
+MART,mart_near_miss,near_miss_total,INTEGER,Somme des deux sources,80,,NON,Interne,NON,n/a,Décision validée : on additionne; total 759
+MART,mart_near_miss,incidents_graves,INTEGER,Nombre d'incidents graves du mois,27,,NON,Interne,NON,n/a,Sert au ratio near-miss par incident grave
+MART,mart_recurring_incident_type,rang,INTEGER,Rang du type d'incident (1 = le plus fréquent),1,,NON,Interne,NON,n/a,RANK : les ex æquo partagent le rang
+MART,mart_recurring_incident_type,incident_type,TEXT,Type d'incident,SPILL,PK,NON,Interne,NON,n/a,
+MART,mart_recurring_incident_type,nb_incidents,INTEGER,Nombre d'incidents de ce type,253,,NON,Interne,NON,n/a,
+MART,mart_recurring_incident_type,pct,REAL,"Part du total des incidents, en %",18.1,,NON,Interne,NON,n/a,
+MART,mart_incident_rate_shift_role,role,TEXT,Rôle des travailleurs du groupe,OPERATOR,PK,NON,Interne,NON,n/a,
+MART,mart_incident_rate_shift_role,shift,TEXT,Équipe des travailleurs du groupe,A,PK,NON,Interne,NON,n/a,Équipe de la fiche travailleur
+MART,mart_incident_rate_shift_role,nb_travailleurs,INTEGER,Nombre de travailleurs du groupe,25,,NON,Interne,NON,n/a,Effectif seulement : aucun identifiant individuel
+MART,mart_incident_rate_shift_role,nb_incidents,INTEGER,Nombre d'incidents du groupe,121,,NON,Interne,NON,n/a,
+MART,mart_incident_rate_shift_role,incidents_par_travailleur,REAL,Incidents divisés par l'effectif du groupe,4.84,,NON,Interne,NON,n/a,"Hypothèse : faute d'heures travaillées, on divise par l'effectif"
+MART,mart_kpi_summary,kpi_id,TEXT,Identifiant du KPI (KPI1 à KPI8),KPI1,PK,NON,Interne,NON,n/a,
+MART,mart_kpi_summary,kpi,TEXT,Nom du KPI,Incidents/month,,NON,Interne,NON,n/a,Noms du catalogue des KPI
+MART,mart_kpi_summary,libelle,TEXT,Définition courte avec le détail (zone; type; groupe),"Moyenne mensuelle des incidents sur les mois complets (octobre exclu, il s'arrête au 28)",,NON,Interne,NON,n/a,Lu dans les MART : suit les données
+MART,mart_kpi_summary,valeur,REAL,Valeur du KPI,144.0,,NON,Interne,NON,n/a,Toujours un nombre à virgule; l'unité est dans la colonne suivante
+MART,mart_kpi_summary,unite,TEXT,Unité de la valeur,incidents/mois,,NON,Interne,NON,n/a,incidents/mois; %; score /100; near-miss; incidents/travailleur; incidents
+STAGING,stg_rejects,_run_id,TEXT,Run qui a rejeté la ligne,20261111_213403,,NON,Confidentiel,NON,n/a,exemple tiré du test d'anomalies (la table est vide sur les vraies données)
+STAGING,stg_rejects,table_name,TEXT,Table source de la ligne rejetée,incidents,,NON,Confidentiel,NON,n/a,exemple tiré du test d'anomalies (la table est vide sur les vraies données)
+STAGING,stg_rejects,source_file,TEXT,Fichier source,incidents.csv,,NON,Confidentiel,NON,n/a,exemple tiré du test d'anomalies (la table est vide sur les vraies données)
+STAGING,stg_rejects,row_num,INTEGER,Numéro de la ligne dans le fichier source,4,,NON,Confidentiel,NON,n/a,exemple tiré du test d'anomalies (la table est vide sur les vraies données)
+STAGING,stg_rejects,rule,TEXT,Règle qualité qui a refusé la ligne,DQ06,,NON,Confidentiel,NON,n/a,DQ02 à DQ07; exemple tiré du test d'anomalies (la table est vide sur les vraies données)
+STAGING,stg_rejects,reason,TEXT,Raison du rejet,valeur non autorisée : severity,,NON,Confidentiel,NON,n/a,Une ligne refusée par plusieurs règles apparaît plusieurs fois; exemple tiré du test d'anomalies (la table est vide sur les vraies données)
+STAGING,stg_rejects,record,TEXT,"Ligne source complète, valeurs séparées par |",INC000003|2026-07-19 17:03:30|LOC017|CHE25|catastrophic|COLLISION|W0091,,NON,Confidentiel,OUI (dans le texte),n/a,Contient worker_id pour les incidents : donc confidentiel; exemple tiré du test d'anomalies (la table est vide sur les vraies données)
+RAW,raw_manifest,fichier,TEXT,Fichier source,locations.csv,PK,NON,Interne,NON,DQ12,
+RAW,raw_manifest,nb_lignes,INTEGER,Nombre de lignes du fichier,25,,NON,Interne,NON,DQ12,
+RAW,raw_manifest,md5,TEXT,Empreinte MD5 du fichier,009eeb912dc404ff9bc70af4ccda7d1d,,NON,Interne,NON,DQ12,Comparée à celle du run précédent
+RAW,raw_manifest,_run_id,TEXT,Run qui a enregistré le manifeste,20261111_213350,,NON,Interne,NON,n/a,
+SUIVI,dq_results,_run_id,TEXT,Run concerné,20261111_213350,,NON,Interne,NON,n/a,
+SUIVI,dq_results,regle,TEXT,Identifiant de la règle (DQ01 à DQ12),DQ01,,NON,Interne,NON,n/a,Voir data_quality_rules.csv
+SUIVI,dq_results,table_name,TEXT,Table contrôlée,locations,,NON,Interne,NON,n/a,
+SUIVI,dq_results,nb_controles,INTEGER,Nombre d'éléments contrôlés,25,,NON,Interne,NON,n/a,
+SUIVI,dq_results,nb_echecs,INTEGER,Nombre d'éléments en échec,0,,NON,Interne,NON,n/a,
+SUIVI,dq_results,statut,TEXT,Résultat du contrôle,OK,,NON,Interne,NON,n/a,OK|REJETS|ALERTE|ECHEC
+SUIVI,dq_results,detail,TEXT,Explication du résultat en une phrase,volume non nul,,NON,Interne,NON,n/a,
+SUIVI,etl_run_log,run_id,TEXT,Identifiant du run (AAAAMMJJ_HHMMSS),20261111_213350,PK,NON,Interne,NON,n/a,
+SUIVI,etl_run_log,debut,TEXT,Début du run,2026-11-11 21:33:50,,NON,Interne,NON,n/a,
+SUIVI,etl_run_log,fin,TEXT,Fin du run,2026-11-11 21:33:51,,NON,Interne,NON,n/a,
+SUIVI,etl_run_log,duree_s,REAL,Durée du run en secondes,1.44,,NON,Interne,NON,n/a,
+SUIVI,etl_run_log,statut,TEXT,SUCCES ou ECHEC,SUCCES,,NON,Interne,NON,n/a,Un ECHEC n'a pas remplacé la base précédente (rollback)
+SUIVI,etl_run_log,nb_raw,INTEGER,Lignes chargées dans RAW,5315,,OUI (ECHEC),Interne,NON,n/a,Vide en cas d'ECHEC
+SUIVI,etl_run_log,nb_staging,INTEGER,Lignes valides en STAGING,5315,,OUI (ECHEC),Interne,NON,n/a,Vide en cas d'ECHEC
+SUIVI,etl_run_log,nb_rejets,INTEGER,Lignes rejetées,0,,OUI (ECHEC),Interne,NON,n/a,Vide en cas d'ECHEC
+SUIVI,etl_run_log,nb_faits,INTEGER,Lignes dans les 2 tables de faits,4900,,OUI (ECHEC),Interne,NON,n/a,Vide en cas d'ECHEC
+SUIVI,etl_run_log,nb_lignes_mart,INTEGER,Lignes dans les 7 MART,75,,OUI (ECHEC),Interne,NON,n/a,Vide en cas d'ECHEC
+SUIVI,etl_run_log,nb_alertes,INTEGER,Nombre d'alertes (statut ALERTE),2,,OUI (ECHEC),Interne,NON,n/a,Vide en cas d'ECHEC
+SUIVI,etl_run_log,nb_echecs,INTEGER,Nombre d'échecs ou de rejets dans dq_results,0,,OUI (ECHEC),Interne,NON,n/a,Vide en cas d'ECHEC
+SUIVI,etl_run_log,message,TEXT,Message d'erreur en cas d'ECHEC,,,OUI (ECHEC),Interne,NON,n/a,Vide si le run a réussi
