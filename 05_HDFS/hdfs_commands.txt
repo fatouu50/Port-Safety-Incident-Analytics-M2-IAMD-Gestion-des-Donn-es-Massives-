@@ -1,7 +1,16 @@
-# Adapter le chemin local si nécessaire
-hdfs dfs -mkdir -p /port_exam/project_11/input
-hdfs dfs -put ../01_DATA_RAW/safety_observations.csv /port_exam/project_11/input/
-hdfs dfs -ls -h /port_exam/project_11/input
-hdfs dfs -head /port_exam/project_11/input/safety_observations.csv
-hdfs dfs -du -h /port_exam/project_11/input
-hdfs fsck /port_exam/project_11/input/safety_observations.csv -files -blocks -locations
+# Projet 11 : chargement de l'archive dans HDFS (à lancer depuis 05_HDFS)
+# Prérequis : docker compose up -d   puis   python prepare_archive.py
+
+# 1. PC -> système local du conteneur namenode
+docker cp archive namenode:/tmp/archive
+
+# 2. Créer le dossier du projet dans HDFS
+docker exec namenode hdfs dfs -mkdir -p /port_exam/project_11
+
+# 3. Conteneur -> HDFS (-f : remplace si déjà présent)
+docker exec namenode hdfs dfs -put -f /tmp/archive /port_exam/project_11/
+
+# 4. Vérifier
+docker exec namenode hdfs dfs -ls -R /port_exam/project_11
+docker exec namenode hdfs dfs -du -h /port_exam/project_11/archive
+docker exec namenode hdfs dfs -count /port_exam/project_11/archive
