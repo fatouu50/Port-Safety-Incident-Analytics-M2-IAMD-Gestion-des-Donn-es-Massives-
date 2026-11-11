@@ -55,7 +55,7 @@ Outils complémentaires : DB Browser for SQLite, Docker Desktop (pour HDFS).
 
 ## Avancement
 
-- [ ] 03_SQL
+- [x] 03_SQL
 - [ ] 04_ETL
 - [ ] 05_HDFS
 - [ ] 06_GOVERNANCE
