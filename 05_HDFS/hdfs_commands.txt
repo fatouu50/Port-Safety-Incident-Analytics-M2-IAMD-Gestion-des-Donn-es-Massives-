@@ -14,3 +14,17 @@ docker exec namenode hdfs dfs -put -f /tmp/archive /port_exam/project_11/
 docker exec namenode hdfs dfs -ls -R /port_exam/project_11
 docker exec namenode hdfs dfs -du -h /port_exam/project_11/archive
 docker exec namenode hdfs dfs -count /port_exam/project_11/archive
+
+# 5. Blocs et réplication
+docker exec namenode hdfs fsck /port_exam/project_11/archive
+docker exec namenode hdfs fsck /port_exam/project_11/archive/raw/incidents/year=2026/month=05/incidents_2026_05.csv -files -blocks -locations
+docker exec namenode hdfs dfs -stat "%r %o %b %n" /port_exam/project_11/archive/raw/incidents/year=2026/month=05/incidents_2026_05.csv
+docker exec namenode hdfs dfs -setrep -w 2 /port_exam/project_11/archive
+
+# 6. Tolérance aux pannes : un DataNode arrêté, le fichier reste lisible
+docker stop datanode1
+docker exec namenode hdfs dfs -cat /port_exam/project_11/archive/reference/locations.csv
+docker start datanode1
+
+# 7. Vérification HDFS = manifeste (lignes et MD5)
+python hdfs_verify.py
