@@ -186,3 +186,37 @@ FROM locations l
 JOIN obs o ON o.location_id = l.location_id
 JOIN inc i ON i.location_id = l.location_id
 ORDER BY i.nb_graves DESC, pct_unsafe DESC;
+
+
+-- ---------------------------------------------------------------------
+-- TODO 5 : grain du Data Warehouse et unicité des sources
+-- Grain choisi : 1 ligne de fact_incident = 1 incident (incident_id)
+--                1 ligne de fact_safety_observation = 1 observation (observation_id)
+-- ---------------------------------------------------------------------
+
+-- Q13 : l'identifiant est-il unique ? (nb_lignes doit être égal à nb_cles)
+SELECT 'incidents' AS table_name,
+       COUNT(*) AS nb_lignes,
+       COUNT(DISTINCT incident_id) AS nb_cles,
+       COUNT(*) - COUNT(DISTINCT incident_id) AS doublons
+FROM incidents
+UNION ALL
+SELECT 'safety_observations',
+       COUNT(*),
+       COUNT(DISTINCT observation_id),
+       COUNT(*) - COUNT(DISTINCT observation_id)
+FROM safety_observations;
+
+-- Q14 : doublons métier, même événement saisi deux fois sous deux identifiants
+SELECT incident_ts, location_id, worker_id, incident_type, COUNT(*) AS nb
+FROM incidents
+GROUP BY incident_ts, location_id, worker_id, incident_type
+HAVING COUNT(*) > 1;
+
+-- Q15 : plan d'exécution, colonne indexée (location_id) : SQLite utilise l'index
+EXPLAIN QUERY PLAN
+SELECT COUNT(*) FROM incidents WHERE location_id = 'LOC015';
+
+-- Q15 bis : plan d'exécution, colonne sans index (equipment_id) : SQLite lit toute la table
+EXPLAIN QUERY PLAN
+SELECT COUNT(*) FROM incidents WHERE equipment_id = 'CHE15';
