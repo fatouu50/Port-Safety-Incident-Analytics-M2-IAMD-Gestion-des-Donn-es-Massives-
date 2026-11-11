@@ -119,3 +119,70 @@ FROM workers_synthetic w
 LEFT JOIN incidents i ON i.worker_id = w.worker_id
 GROUP BY w.role, w.shift
 ORDER BY incidents_par_travailleur DESC;
+
+
+-- ---------------------------------------------------------------------
+-- TODO 4 : sous-requête et CTE
+-- ---------------------------------------------------------------------
+
+-- Q09 : SOUS-REQUÊTE, zones qui dépassent la moyenne d'incidents par zone
+SELECT l.location_id, l.area_type, COUNT(*) AS nb_incidents
+FROM incidents i
+JOIN locations l ON l.location_id = i.location_id
+GROUP BY l.location_id, l.area_type
+HAVING COUNT(*) > (SELECT AVG(n)
+                   FROM (SELECT COUNT(*) AS n FROM incidents GROUP BY location_id))
+ORDER BY nb_incidents DESC;
+
+-- Q10 : CTE + RANK, type d'incident le plus récurrent dans chaque type de zone
+WITH par_zone_type AS (
+    SELECT l.area_type, i.incident_type, COUNT(*) AS nb
+    FROM incidents i
+    JOIN locations l ON l.location_id = i.location_id
+    GROUP BY l.area_type, i.incident_type
+),
+classement AS (
+    SELECT area_type, incident_type, nb,
+           RANK() OVER (PARTITION BY area_type ORDER BY nb DESC) AS rang,
+           ROUND(100.0 * nb / SUM(nb) OVER (PARTITION BY area_type), 1) AS pct_dans_la_zone
+    FROM par_zone_type
+)
+SELECT area_type, incident_type AS type_le_plus_recurrent, nb, pct_dans_la_zone
+FROM classement
+WHERE rang = 1
+ORDER BY nb DESC;
+
+-- Q11 : CTE + LAG, variation du nombre d'incidents d'un mois à l'autre
+WITH mensuel AS (
+    SELECT strftime('%Y-%m', incident_ts) AS mois, COUNT(*) AS nb
+    FROM incidents
+    GROUP BY mois
+)
+SELECT mois, nb,
+       LAG(nb) OVER (ORDER BY mois) AS nb_mois_precedent,
+       ROUND(100.0 * (nb - LAG(nb) OVER (ORDER BY mois)) / LAG(nb) OVER (ORDER BY mois), 1) AS variation_pct
+FROM mensuel
+ORDER BY mois;
+
+-- Q12 : CTE, observations UNSAFE face aux incidents graves, par zone
+WITH obs AS (
+    SELECT location_id,
+           COUNT(*) AS nb_observations,
+           SUM(CASE WHEN observation_type = 'UNSAFE' THEN 1 ELSE 0 END) AS nb_unsafe
+    FROM safety_observations
+    GROUP BY location_id
+),
+inc AS (
+    SELECT location_id,
+           COUNT(*) AS nb_incidents,
+           SUM(CASE WHEN severity IN ('HIGH', 'CRITICAL') THEN 1 ELSE 0 END) AS nb_graves
+    FROM incidents
+    GROUP BY location_id
+)
+SELECT l.location_id, l.area_type, o.nb_observations, o.nb_unsafe,
+       ROUND(100.0 * o.nb_unsafe / o.nb_observations, 1) AS pct_unsafe,
+       i.nb_incidents, i.nb_graves
+FROM locations l
+JOIN obs o ON o.location_id = l.location_id
+JOIN inc i ON i.location_id = l.location_id
+ORDER BY i.nb_graves DESC, pct_unsafe DESC;
