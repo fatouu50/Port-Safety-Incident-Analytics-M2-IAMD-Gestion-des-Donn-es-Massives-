@@ -1,0 +1,37 @@
+lineage_id,couche_source,objet_source,couche_cible,objet_cible,transformation,regles_dq,etape,statut
+L01,SOURCE,01_DATA_RAW/locations.csv,RAW,raw_locations,Chargement en texte sans correction; ajout de _source_file; _row_num et _run_id,DQ01,etl_pipeline.py 5.1,implémenté
+L02,SOURCE,01_DATA_RAW/workers_synthetic.csv,RAW,raw_workers_synthetic,Chargement en texte sans correction; ajout de _source_file; _row_num et _run_id,DQ01,etl_pipeline.py 5.1,implémenté
+L03,SOURCE,01_DATA_RAW/equipment.csv,RAW,raw_equipment,Chargement en texte sans correction; ajout de _source_file; _row_num et _run_id,DQ01,etl_pipeline.py 5.1,implémenté
+L04,SOURCE,01_DATA_RAW/incidents.csv,RAW,raw_incidents,Chargement en texte sans correction; ajout de _source_file; _row_num et _run_id,DQ01,etl_pipeline.py 5.1,implémenté
+L05,SOURCE,01_DATA_RAW/safety_observations.csv,RAW,raw_safety_observations,Chargement en texte sans correction; ajout de _source_file; _row_num et _run_id,DQ01,etl_pipeline.py 5.1,implémenté
+L06,SOURCE,01_DATA_RAW/*.csv (5 fichiers),RAW,raw_manifest,Nombre de lignes et empreinte MD5 de chaque fichier source,DQ12,etl_pipeline.py 5.1,implémenté
+L07,RAW,raw_locations,STAGING,stg_locations,Suppression des espaces; majuscules; contrôles; lignes valides seulement,DQ02;DQ03;DQ04;DQ06,etl_pipeline.py 5.2,implémenté
+L08,RAW,raw_workers_synthetic,STAGING,stg_workers_synthetic,Suppression des espaces; majuscules; contrôles; lignes valides seulement,DQ02;DQ03;DQ04;DQ06,etl_pipeline.py 5.2,implémenté
+L09,RAW,raw_equipment,STAGING,stg_equipment,Suppression des espaces; majuscules; contrôles; lignes valides seulement; alerte sur home_area,DQ02;DQ03;DQ04;DQ06;DQ11,etl_pipeline.py 5.2,implémenté
+L10,RAW,raw_incidents,STAGING,stg_incidents,Suppression des espaces; majuscules; contrôles dont dates et clés étrangères; lignes valides seulement,DQ02;DQ03;DQ04;DQ05;DQ06;DQ07,etl_pipeline.py 5.2,implémenté
+L11,RAW,raw_safety_observations,STAGING,stg_safety_observations,Suppression des espaces; majuscules; contrôles dont dates et clés étrangères; observation_id converti en entier,DQ02;DQ03;DQ04;DQ05;DQ06;DQ07,etl_pipeline.py 5.2,implémenté
+L12,RAW,raw_* (5 tables),STAGING,stg_rejects,Chaque ligne refusée est écrite avec sa règle; sa raison et la ligne source complète,DQ02 à DQ07,etl_pipeline.py 5.2,implémenté
+L13,STAGING,stg_locations,CORE,dim_location,Clé de substitution location_key attribuée dans l'ordre de location_id,,etl_pipeline.py 5.3,implémenté
+L14,STAGING,stg_equipment,CORE,dim_equipment,Clé de substitution equipment_key; home_area conservée sans jointure,DQ11,etl_pipeline.py 5.3,implémenté
+L15,STAGING,stg_workers_synthetic,CORE,dim_worker,Clé de substitution worker_key; table confidentielle (contient worker_id),,etl_pipeline.py 5.3,implémenté
+L16,STAGING,stg_incidents + stg_safety_observations,CORE,dim_date,Un jour par ligne; du premier au dernier jour avec des données; ajout de days_in_month,,etl_pipeline.py 5.3,implémenté
+L17,Constante du pipeline,24 heures (0 à 23),CORE,dim_hour,Génération des 24 heures et de leur tranche horaire (hypothèse H3),,etl_pipeline.py 5.3,implémenté
+L18,Constante du pipeline,valeurs autorisées (REGLES; DQ06),CORE,dim_incident_type,Liste complète des types d'incident (clés stables); is_near_miss,DQ06,etl_pipeline.py 5.3,implémenté
+L19,Constante du pipeline,valeurs autorisées (REGLES; DQ06),CORE,dim_severity,Liste ordonnée LOW à CRITICAL; severity_weight (H1); is_serious (H2),DQ06,etl_pipeline.py 5.3,implémenté
+L20,Constante du pipeline,valeurs autorisées (REGLES; DQ06),CORE,dim_observation_type,Liste complète des types d'observation,DQ06,etl_pipeline.py 5.3,implémenté
+L21,Constante du pipeline,valeurs autorisées (REGLES; DQ06),CORE,dim_reporter_role,Liste complète des rôles de déclarant,DQ06,etl_pipeline.py 5.3,implémenté
+L22,STAGING + CORE,stg_incidents + 7 dimensions,CORE,fact_incident,Les textes sont remplacés par les clés de substitution; mesures incident_count; is_serious; is_near_miss; severity_weight,DQ08,etl_pipeline.py 5.4,implémenté
+L23,STAGING + CORE,stg_safety_observations + 5 dimensions,CORE,fact_safety_observation,Les textes sont remplacés par les clés de substitution; mesures observation_count; is_unsafe; is_near_miss,DQ08,etl_pipeline.py 5.4,implémenté
+L24,CORE,fact_incident + dim_date,MART,mart_incidents_month,Regroupement par mois; jours_couverts et mois_complet (octobre s'arrête au 28),DQ10,etl_pipeline.py 5.5,implémenté
+L25,CORE,fact_incident + dim_severity,MART,mart_severity_distribution,Regroupement par gravité; pourcentage du total,,etl_pipeline.py 5.5,implémenté
+L26,CORE,fact_incident + fact_safety_observation + dim_location,MART,mart_incidents_by_area,Regroupement par zone; pourcentage UNSAFE; score_risque (formule à confirmer),,etl_pipeline.py 5.5,implémenté
+L27,CORE,fact_incident + fact_safety_observation + dim_date,MART,mart_near_miss,Near-miss par mois; incidents + observations,,etl_pipeline.py 5.5,implémenté
+L28,CORE,fact_incident + dim_incident_type,MART,mart_recurring_incident_type,Regroupement par type; rang (RANK); pourcentage,,etl_pipeline.py 5.5,implémenté
+L29,CORE,fact_incident + dim_worker,MART,mart_incident_rate_shift_role,Incidents par rôle et équipe divisés par l'effectif; aucun worker_id en sortie,,etl_pipeline.py 5.5,implémenté
+L30,MART,mart_incidents_month + mart_incidents_by_area + mart_near_miss + mart_recurring_incident_type + mart_incident_rate_shift_role + mart_severity_distribution,MART,mart_kpi_summary,Reprise des chiffres des 6 MART en 8 KPI,,etl_pipeline.py 5.6,implémenté
+L31,RAW + STAGING + CORE + MART,ensemble des contrôles,SUIVI,dq_results,Une ligne par règle et par table avec statut et détail,DQ01 à DQ12,etl_pipeline.py 5.2 et 5.7,implémenté
+L32,RAW + STAGING + CORE + MART,run complet,SUIVI,etl_run_log,Une ligne par run : date; durée; volumes; statut SUCCES ou ECHEC; l'historique est conservé entre deux runs,,etl_pipeline.py 5.7 et 5.8,implémenté
+L33,SOURCE,01_DATA_RAW/incidents.csv + safety_observations.csv + 3 référentiels,ARCHIVE,05_HDFS/archive puis HDFS /port_exam/project_11/archive,Partition par année et mois; manifeste (lignes et MD5); copie dans HDFS (réplication 2). L'archive part des CSV sources et non du DWH,,05_HDFS/prepare_archive.py,implémenté
+L34,ARCHIVE,05_HDFS/archive/_manifest/manifest.csv,ARCHIVE,HDFS (vérification),Relecture de chaque fichier dans HDFS; comparaison des lignes et du MD5,,05_HDFS/hdfs_verify.py,implémenté
+L35,MART,mart_* (7 tables),CONSOMMATION,07_EDA (notebook),Lecture des MART uniquement; 6 graphiques interprétés,,phase 8 (Fatouma),prévu
+L36,MART + SUIVI,mart_* + dq_results + etl_run_log,CONSOMMATION,Dashboard,Cartes KPI; graphiques; panneau qualité,,phase 9,prévu

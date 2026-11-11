@@ -1,16 +1,40 @@
-table,rule,description,severity
-locations,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
-locations,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
-locations,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM
-workers_synthetic,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
-workers_synthetic,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
-workers_synthetic,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM
-incidents,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
-incidents,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
-incidents,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM
-safety_observations,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
-safety_observations,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
-safety_observations,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM
-equipment,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
-equipment,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
-equipment,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM
+rule_id,table,rule,description,severity,seuil,action_si_echec,couche
+DQ01,locations,ROW_COUNT,Volume non nul,HIGH,au moins 1 ligne,SIGNALEMENT,RAW
+DQ01,workers_synthetic,ROW_COUNT,Volume non nul,HIGH,au moins 1 ligne,SIGNALEMENT,RAW
+DQ01,equipment,ROW_COUNT,Volume non nul,HIGH,au moins 1 ligne,SIGNALEMENT,RAW
+DQ01,incidents,ROW_COUNT,Volume non nul,HIGH,au moins 1 ligne,SIGNALEMENT,RAW
+DQ01,safety_observations,ROW_COUNT,Volume non nul,HIGH,au moins 1 ligne,SIGNALEMENT,RAW
+DQ02,locations,MANDATORY,Valeurs obligatoires : aucune colonne vide (taux de valeurs manquantes),MEDIUM,0 valeur vide,REJET_LIGNE,STAGING
+DQ02,workers_synthetic,MANDATORY,Valeurs obligatoires : aucune colonne vide (taux de valeurs manquantes),MEDIUM,0 valeur vide,REJET_LIGNE,STAGING
+DQ02,equipment,MANDATORY,Valeurs obligatoires : aucune colonne vide (taux de valeurs manquantes),MEDIUM,0 valeur vide,REJET_LIGNE,STAGING
+DQ02,incidents,MANDATORY,Valeurs obligatoires : aucune colonne vide (taux de valeurs manquantes),MEDIUM,0 valeur vide,REJET_LIGNE,STAGING
+DQ02,safety_observations,MANDATORY,Valeurs obligatoires : aucune colonne vide (taux de valeurs manquantes),MEDIUM,0 valeur vide,REJET_LIGNE,STAGING
+DQ03,locations,DUPLICATE_CHECK,Doublon sur la clé (on garde la première ligne),HIGH,0 doublon de clé (location_id),REJET_LIGNE,STAGING
+DQ03,workers_synthetic,DUPLICATE_CHECK,Doublon sur la clé (on garde la première ligne),HIGH,0 doublon de clé (worker_id),REJET_LIGNE,STAGING
+DQ03,equipment,DUPLICATE_CHECK,Doublon sur la clé (on garde la première ligne),HIGH,0 doublon de clé (equipment_id),REJET_LIGNE,STAGING
+DQ03,incidents,DUPLICATE_CHECK,Doublon sur la clé (on garde la première ligne),HIGH,0 doublon de clé (incident_id),REJET_LIGNE,STAGING
+DQ03,safety_observations,DUPLICATE_CHECK,Doublon sur la clé (on garde la première ligne),HIGH,0 doublon de clé (observation_id),REJET_LIGNE,STAGING
+DQ04,locations,ID_FORMAT,Format des identifiants,MEDIUM,location_id = LOC + 3 chiffres,REJET_LIGNE,STAGING
+DQ04,workers_synthetic,ID_FORMAT,Format des identifiants,MEDIUM,worker_id = W + 4 chiffres,REJET_LIGNE,STAGING
+DQ04,equipment,ID_FORMAT,Format des identifiants,MEDIUM,equipment_id = CHE + 2 chiffres,REJET_LIGNE,STAGING
+DQ04,incidents,ID_FORMAT,Format des identifiants,MEDIUM,INC + 6 chiffres; LOC + 3 chiffres; CHE + 2 chiffres; W + 4 chiffres,REJET_LIGNE,STAGING
+DQ04,safety_observations,ID_FORMAT,Format des identifiants,MEDIUM,observation_id = entier; location_id = LOC + 3 chiffres,REJET_LIGNE,STAGING
+DQ05,incidents,DATE_VALID,Date valide au format AAAA-MM-JJ HH:MM:SS; ni avant 2020 ni dans le futur,HIGH,entre 2020-01-01 et la date du run,REJET_LIGNE,STAGING
+DQ05,safety_observations,DATE_VALID,Date valide au format AAAA-MM-JJ HH:MM:SS; ni avant 2020 ni dans le futur,HIGH,entre 2020-01-01 et la date du run,REJET_LIGNE,STAGING
+DQ06,locations,ALLOWED_VALUES,Valeurs autorisées,MEDIUM,area_type dans BERTH|GATE|RAIL|WORKSHOP|YARD,REJET_LIGNE,STAGING
+DQ06,workers_synthetic,ALLOWED_VALUES,Valeurs autorisées,MEDIUM,role dans SUPERVISOR|OPERATOR|TECHNICIAN|DRIVER; shift dans A|B|C,REJET_LIGNE,STAGING
+DQ06,equipment,ALLOWED_VALUES,Valeurs autorisées,MEDIUM,equipment_type dans RMG|RTG|TT|FL|RS,REJET_LIGNE,STAGING
+DQ06,incidents,ALLOWED_VALUES,Valeurs autorisées,MEDIUM,severity dans LOW|MEDIUM|HIGH|CRITICAL; incident_type dans COLLISION|EQUIPMENT|FALL|NEAR_MISS|PPE|SPILL,REJET_LIGNE,STAGING
+DQ06,safety_observations,ALLOWED_VALUES,Valeurs autorisées,MEDIUM,observation_type dans SAFE|UNSAFE|NEAR_MISS; reported_by_role dans OPERATOR|SUPERVISOR|HSE,REJET_LIGNE,STAGING
+DQ07,incidents,FOREIGN_KEY,Clés étrangères : la valeur existe dans le référentiel,HIGH,location_id; equipment_id et worker_id existent dans leurs référentiels,REJET_LIGNE,STAGING
+DQ07,safety_observations,FOREIGN_KEY,Clés étrangères : la valeur existe dans le référentiel,HIGH,location_id existe dans locations,REJET_LIGNE,STAGING
+DQ08,locations,RECONCILIATION,Réconciliation RAW = rejets + CORE,HIGH,écart = 0,BLOCAGE,RAW vers CORE
+DQ08,workers_synthetic,RECONCILIATION,Réconciliation RAW = rejets + CORE,HIGH,écart = 0,BLOCAGE,RAW vers CORE
+DQ08,equipment,RECONCILIATION,Réconciliation RAW = rejets + CORE,HIGH,écart = 0,BLOCAGE,RAW vers CORE
+DQ08,incidents,RECONCILIATION,Réconciliation RAW = rejets + CORE,HIGH,écart = 0,BLOCAGE,RAW vers CORE
+DQ08,safety_observations,RECONCILIATION,Réconciliation RAW = rejets + CORE,HIGH,écart = 0,BLOCAGE,RAW vers CORE
+DQ09,fact_incident,FRESHNESS,Fraîcheur : âge du dernier événement,MEDIUM,31 jours maximum (hypothèse du groupe),ALERTE,CORE
+DQ09,fact_safety_observation,FRESHNESS,Fraîcheur : âge du dernier événement,MEDIUM,31 jours maximum (hypothèse du groupe),ALERTE,CORE
+DQ10,mart_incidents_month,VOLUME_VARIATION,Variation du volume mensuel entre deux mois complets consécutifs (octobre exclu car tronqué),MEDIUM,25 % maximum (hypothèse du groupe),ALERTE,MART
+DQ11,equipment,HOME_AREA_MISMATCH,home_area (Yxx) ne correspond à aucune location_id (LOCxxx),LOW,constat : 40 engins sur 40 sans correspondance; colonne non utilisée en jointure,ALERTE,STAGING
+DQ12,sources,SOURCE_INTEGRITY,Intégrité des sources : empreinte MD5 identique à celle du run précédent,MEDIUM,0 fichier source modifié,ALERTE,RAW
