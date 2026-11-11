@@ -53,12 +53,31 @@ pip install -r requirements.txt
 
 Outils complémentaires : DB Browser for SQLite, Docker Desktop (pour HDFS).
 
+## Lancer le Data Warehouse
+
+Depuis la racine du projet :
+
+```powershell
+python 04_ETL/etl_pipeline.py     # RAW -> STAGING -> CORE -> MART, crée 04_ETL/project_11_dwh.db
+python 04_ETL/test_etl.py         # tests : idempotence, 11 rejets tracés, panne et rollback
+```
+
+Le pipeline peut être relancé autant de fois qu'on veut : la base est reconstruite à l'identique.
+En cas d'erreur, la base précédente est conservée (rollback) et l'échec est noté dans `etl_run_log`.
+
+Tables MART lues par l'EDA et le dashboard : `mart_incidents_month`, `mart_severity_distribution`,
+`mart_incidents_by_area`, `mart_near_miss`, `mart_recurring_incident_type`,
+`mart_incident_rate_shift_role`, `mart_kpi_summary`.
+
+Conception du DWH : `04_ETL/dwh_conception.md`. Gouvernance : `06_GOVERNANCE/`
+(règles qualité, lineage, dictionnaire enrichi, politique d'accès).
+
 ## Avancement
 
 - [x] 03_SQL
-- [ ] 04_ETL
+- [x] 04_ETL
 - [x] 05_HDFS
-- [ ] 06_GOVERNANCE
+- [x] 06_GOVERNANCE
 - [ ] 07_EDA
 - [ ] Dashboard
 - [ ] 11_ARCHITECTURE
