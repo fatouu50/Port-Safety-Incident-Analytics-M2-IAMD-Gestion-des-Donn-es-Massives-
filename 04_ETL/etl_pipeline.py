@@ -24,13 +24,31 @@ BASE = DOSSIER_ETL / "project_11_dwh.db"
 TABLES = ["locations", "workers_synthetic", "equipment", "incidents", "safety_observations"]
 
 # Identifiant du run : sert à savoir quel lancement a chargé quelle ligne
-RUN_ID = datetime.now().strftime("%Y%m%d_%H%M%S")
+DEBUT = datetime.now()
+RUN_ID = DEBUT.strftime("%Y%m%d_%H%M%S")
 
 print("Run        :", RUN_ID)
 print("Sources    :", DOSSIER_DONNEES)
 print("Base       :", BASE)
 
-# 1. Repartir d'une base vide (reproductibilité)
+# 1. Mémoire entre deux runs : la base est recréée à chaque lancement, donc on
+# relit d'abord le manifeste des sources (pour détecter un fichier modifié)
+# et le journal des runs (pour garder l'historique) du run précédent.
+manifeste_precedent = None
+journal_precedent = None
+if BASE.exists():
+    ancienne = sqlite3.connect(BASE)
+    try:
+        manifeste_precedent = pd.read_sql("SELECT * FROM raw_manifest", ancienne)
+    except Exception:
+        pass
+    try:
+        journal_precedent = pd.read_sql("SELECT * FROM etl_run_log", ancienne)
+    except Exception:
+        pass
+    ancienne.close()
+
+# 2. Repartir d'une base vide (reproductibilité)
 if BASE.exists():
     BASE.unlink()
 
@@ -175,7 +193,7 @@ def controler(df, table, regle, controles):
             }))
         en_echec = en_echec | masque
     statut = "OK" if not en_echec.any() else "REJETS"
-    resultats_dq.append([RUN_ID, regle, table, len(df), int(en_echec.sum()), statut])
+    resultats_dq.append([RUN_ID, regle, table, len(df), int(en_echec.sum()), statut, ""])
     return en_echec
 
 
@@ -193,7 +211,7 @@ for table in TABLES:
 
     # DQ01 : volume non nul
     resultats_dq.append([RUN_ID, "DQ01", table, len(df), 0 if len(df) > 0 else 1,
-                         "OK" if len(df) > 0 else "REJETS"])
+                         "OK" if len(df) > 0 else "REJETS", "volume non nul"])
 
     # Standardisation : espaces supprimés, majuscules
     for c in colonnes:
@@ -250,7 +268,8 @@ for table in TABLES:
 zones = set(stg["locations"]["location_id"])
 sans_zone = int((~stg["equipment"]["home_area"].isin(zones)).sum())
 resultats_dq.append([RUN_ID, "DQ11", "equipment", len(stg["equipment"]), sans_zone,
-                     "ALERTE" if sans_zone > 0 else "OK"])
+                     "ALERTE" if sans_zone > 0 else "OK",
+                     "home_area (Yxx) ne correspond à aucune location_id (LOCxxx)"])
 
 # Écriture des rejets et des résultats DQ
 colonnes_rejets = ["_run_id", "table_name", "source_file", "row_num", "rule", "reason", "record"]
@@ -261,12 +280,12 @@ else:
 table_rejets.to_sql("stg_rejects", con, index=False, if_exists="replace")
 
 dq_results = pd.DataFrame(resultats_dq, columns=["_run_id", "regle", "table_name",
-                                                 "nb_controles", "nb_echecs", "statut"])
+                                                 "nb_controles", "nb_echecs", "statut", "detail"])
 dq_results.to_sql("dq_results", con, index=False, if_exists="replace")
 
 print()
 print("Résultats des contrôles qualité :")
-print(dq_results.drop(columns=["_run_id"]).to_string(index=False))
+print(dq_results.drop(columns=["_run_id", "detail"]).to_string(index=False))
 
 print()
 print("Réconciliation RAW = STAGING + rejets :")
@@ -823,6 +842,104 @@ for kpi_id, attendu, nom in [("KPI1", 144.0, "Moyenne mensuelle (mois complets)"
     afficher_controle(f"{kpi_id} {nom}", obtenu == attendu, f"{obtenu}, attendu {attendu}")
 afficher_controle("8 KPI présents, aucun vide",
                   valeur("SELECT COUNT(*) FROM mart_kpi_summary WHERE valeur IS NOT NULL") == 8, "")
+
+
+# ---------------------------------------------------------------------
+# Étape 5.7 : monitoring (DQ08 à DQ10, DQ12) et journal des runs
+# ---------------------------------------------------------------------
+# DQ08 réconciliation  : RAW = rejets + CORE, pour chaque table
+# DQ09 fraîcheur       : le dernier événement n'est pas trop ancien
+# DQ10 variation       : le volume d'un mois complet ne saute pas de plus de 25 %
+# DQ12 intégrité       : les fichiers sources n'ont pas changé depuis le run précédent
+# Seuils = hypothèses du groupe, à documenter dans 06_GOVERNANCE.
+print()
+print("MONITORING : réconciliation, fraîcheur, variation, intégrité des sources")
+
+SEUIL_FRAICHEUR_JOURS = 31      # un chargement mensuel : au-delà, les données sont trop vieilles
+SEUIL_VARIATION_PCT = 25.0      # variation maximale d'un mois complet au suivant
+
+resultats_monitoring = []
+
+
+def ajouter_dq(regle, table, nb_controles, nb_echecs, statut_si_echec, detail):
+    statut = "OK" if nb_echecs == 0 else statut_si_echec
+    resultats_monitoring.append([RUN_ID, regle, table, int(nb_controles), int(nb_echecs), statut, detail])
+
+
+# DQ08 : réconciliation RAW = STAGING + rejets = CORE
+CORE_DE = {"locations": "dim_location", "workers_synthetic": "dim_worker",
+           "equipment": "dim_equipment", "incidents": "fact_incident",
+           "safety_observations": "fact_safety_observation"}
+for table, nb_raw, nb_rejetes, nb_stg in bilan:
+    nb_core = valeur(f"SELECT COUNT(*) FROM {CORE_DE[table]}")
+    ecart = abs(nb_raw - (nb_rejetes + nb_core))
+    ajouter_dq("DQ08", table, nb_raw, ecart, "ECHEC",
+               f"RAW {nb_raw} = rejets {nb_rejetes} + {CORE_DE[table]} {nb_core}")
+
+# DQ09 : fraîcheur, âge du dernier événement par rapport à aujourd'hui
+aujourd_hui = pd.Timestamp.now().normalize()
+for fait in ["fact_incident", "fact_safety_observation"]:
+    derniere = pd.to_datetime(valeur(
+        f"SELECT MAX(d.full_date) FROM {fait} f JOIN dim_date d ON d.date_key = f.date_key"))
+    age = (aujourd_hui - derniere).days
+    ajouter_dq("DQ09", fait, 1, 1 if age > SEUIL_FRAICHEUR_JOURS else 0, "ALERTE",
+               f"dernier événement {derniere:%Y-%m-%d}, âge {age} j, seuil {SEUIL_FRAICHEUR_JOURS} j")
+
+# DQ10 : variation du volume mensuel (mois complets seulement : octobre est tronqué)
+mois_complets = con.execute("SELECT mois, nb_incidents FROM mart_incidents_month "
+                            "WHERE mois_complet = 1 ORDER BY mois").fetchall()
+nb_comparaisons = 0
+mois_anormaux = []
+for (mois_prec, nb_prec), (mois, nb) in zip(mois_complets, mois_complets[1:]):
+    nb_comparaisons += 1
+    variation = 100.0 * (nb - nb_prec) / nb_prec
+    if abs(variation) > SEUIL_VARIATION_PCT:
+        mois_anormaux.append(f"{mois} {variation:+.1f} % vs {mois_prec}")
+ajouter_dq("DQ10", "mart_incidents_month", nb_comparaisons, len(mois_anormaux), "ALERTE",
+           "; ".join(mois_anormaux) if mois_anormaux else f"aucune variation au-dessus de {SEUIL_VARIATION_PCT:.0f} %")
+
+# DQ12 : les sources sont-elles identiques à celles du run précédent ? (MD5)
+if manifeste_precedent is None:
+    ajouter_dq("DQ12", "sources", len(manifeste), 0, "ALERTE",
+               "premier run : manifeste de référence enregistré")
+else:
+    md5_precedent = dict(zip(manifeste_precedent["fichier"], manifeste_precedent["md5"]))
+    modifies = [f for f, m in zip(manifeste["fichier"], manifeste["md5"]) if md5_precedent.get(f) != m]
+    ajouter_dq("DQ12", "sources", len(manifeste), len(modifies), "ALERTE",
+               ("source modifiée : " + ", ".join(modifies)) if modifies
+               else "sources identiques au run précédent (MD5)")
+
+pd.DataFrame(resultats_monitoring, columns=dq_results.columns).to_sql(
+    "dq_results", con, index=False, if_exists="append")
+
+print(pd.read_sql("SELECT regle, table_name, nb_controles, nb_echecs, statut, detail FROM dq_results "
+                  "WHERE regle IN ('DQ08', 'DQ09', 'DQ10', 'DQ12') ORDER BY regle, table_name", con
+                  ).to_string(index=False))
+
+# Journal des runs : volumes, durée, statut. L'historique des runs précédents est conservé.
+FIN = datetime.now()
+journal = pd.DataFrame([[
+    RUN_ID,
+    DEBUT.strftime("%Y-%m-%d %H:%M:%S"),
+    FIN.strftime("%Y-%m-%d %H:%M:%S"),
+    round((FIN - DEBUT).total_seconds(), 2),
+    "SUCCES",
+    sum(b[1] for b in bilan),                      # lignes RAW
+    sum(b[3] for b in bilan),                      # lignes STAGING
+    sum(b[2] for b in bilan),                      # lignes rejetées
+    valeur("SELECT COUNT(*) FROM fact_incident") + valeur("SELECT COUNT(*) FROM fact_safety_observation"),
+    sum(valeur(f"SELECT COUNT(*) FROM {nom}") for nom in list(MARTS) + ["mart_kpi_summary"]),
+    valeur("SELECT COUNT(*) FROM dq_results WHERE statut = 'ALERTE'"),
+    valeur("SELECT COUNT(*) FROM dq_results WHERE statut IN ('ECHEC', 'REJETS')"),
+]], columns=["run_id", "debut", "fin", "duree_s", "statut", "nb_raw", "nb_staging", "nb_rejets",
+             "nb_faits", "nb_lignes_mart", "nb_alertes", "nb_echecs"])
+if journal_precedent is not None:
+    journal = pd.concat([journal_precedent, journal], ignore_index=True)
+journal.to_sql("etl_run_log", con, index=False, if_exists="replace")
+
+print()
+print(f"Journal etl_run_log ({len(journal)} run(s) enregistré(s)) :")
+print(journal.tail(3).to_string(index=False))
 
 con.commit()
 con.close()
