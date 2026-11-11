@@ -76,3 +76,19 @@ for (annee, mois), partie in observations.groupby(["annee", "mois"]):
     partie.drop(columns=["annee", "mois"]).to_csv(fichier, index=False)
 
     print(f"  {fichier.relative_to(ARCHIVE)} : {len(partie)} lignes")
+
+
+    
+# ---------------------------------------------------------------------
+# Étape 2.5 : copier les tables de référence telles quelles
+# ---------------------------------------------------------------------
+dossier_reference = ARCHIVE / "reference"
+dossier_reference.mkdir(parents=True, exist_ok=True)
+
+for table in ["locations", "workers_synthetic", "equipment"]:
+    source = DOSSIER_01_DATA_RAW / (table + ".csv")
+    fichier = dossier_reference / (table + ".csv")
+    shutil.copyfile(source, fichier)
+
+    nb_lignes = len(pd.read_csv(fichier))
+    print(f"  {fichier.relative_to(ARCHIVE)} : {nb_lignes} lignes")
