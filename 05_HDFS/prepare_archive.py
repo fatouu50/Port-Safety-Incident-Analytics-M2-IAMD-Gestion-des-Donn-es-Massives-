@@ -115,3 +115,26 @@ manifeste.to_csv(dossier_manifeste / "manifest.csv", index=False)
 print()
 print("Manifeste :", len(manifeste), "fichiers")
 print(manifeste.head())
+
+
+
+# ---------------------------------------------------------------------
+# Étape 2.7 : contrôle, la source et l'archive ont le même nombre de lignes
+# ---------------------------------------------------------------------
+print()
+print("Contrôle source = archive :")
+
+controles = {
+    "incidents": "raw/incidents/",
+    "safety_observations": "raw/safety_observations/",
+    "locations": "reference/locations.csv",
+    "workers_synthetic": "reference/workers_synthetic.csv",
+    "equipment": "reference/equipment.csv",
+}
+
+for table, debut_chemin in controles.items():
+    dans_source = len(pd.read_csv(DOSSIER_01_DATA_RAW / (table + ".csv")))
+    dans_archive = manifeste[manifeste["fichier"].str.startswith(debut_chemin)]["nb_lignes"].sum()
+
+    statut = "OK" if dans_source == dans_archive else "ÉCART"
+    print(f"  {table:<22} source {dans_source:>5} = archive {dans_archive:>5} : {statut}")
