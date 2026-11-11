@@ -4,6 +4,7 @@ Lancement depuis le dossier 05_HDFS :  python prepare_archive.py
 """
 from pathlib import Path
 import shutil
+import hashlib
 
 import pandas as pd
 
@@ -92,3 +93,25 @@ for table in ["locations", "workers_synthetic", "equipment"]:
 
     nb_lignes = len(pd.read_csv(fichier))
     print(f"  {fichier.relative_to(ARCHIVE)} : {nb_lignes} lignes")
+
+    
+# ---------------------------------------------------------------------
+# Étape 2.6 : le manifeste (chemin, nombre de lignes, empreinte MD5)
+# ---------------------------------------------------------------------
+lignes_manifeste = []
+
+for fichier in sorted(ARCHIVE.rglob("*.csv")):
+    chemin = str(fichier.relative_to(ARCHIVE))
+    nb_lignes = len(pd.read_csv(fichier))
+    md5 = hashlib.md5(fichier.read_bytes()).hexdigest()
+    lignes_manifeste.append([chemin, nb_lignes, md5])
+
+manifeste = pd.DataFrame(lignes_manifeste, columns=["fichier", "nb_lignes", "md5"])
+
+dossier_manifeste = ARCHIVE / "_manifest"
+dossier_manifeste.mkdir(parents=True, exist_ok=True)
+manifeste.to_csv(dossier_manifeste / "manifest.csv", index=False)
+
+print()
+print("Manifeste :", len(manifeste), "fichiers")
+print(manifeste.head())
