@@ -3,6 +3,7 @@ Projet 11 : préparation de l'archive à envoyer dans HDFS.
 Lancement depuis le dossier 05_HDFS :  python prepare_archive.py
 """
 from pathlib import Path
+import shutil
 
 import pandas as pd
 
@@ -35,3 +36,23 @@ print(incidents[["incident_id", "incident_ts", "annee", "mois"]].head())
 print()
 print("Nombre d'incidents par mois :")
 print(incidents.groupby(["annee", "mois"]).size())
+
+
+# ---------------------------------------------------------------------
+# Étape 2.3 : écrire les incidents, un fichier par mois
+# ---------------------------------------------------------------------
+
+# Repartir d'une archive vide : on peut relancer le script sans doublon
+if ARCHIVE.exists():
+    shutil.rmtree(ARCHIVE)
+
+print()
+print("Fichiers créés :")
+for (annee, mois), partie in incidents.groupby(["annee", "mois"]):
+    dossier = ARCHIVE / "raw" / "incidents" / f"year={annee}" / f"month={mois}"
+    dossier.mkdir(parents=True, exist_ok=True)
+
+    fichier = dossier / f"incidents_{annee}_{mois}.csv"
+    partie.drop(columns=["annee", "mois"]).to_csv(fichier, index=False)
+
+    print(f"  {fichier.relative_to(ARCHIVE)} : {len(partie)} lignes")
