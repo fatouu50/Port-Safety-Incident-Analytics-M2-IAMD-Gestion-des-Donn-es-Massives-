@@ -1,0 +1,16 @@
+table,rule,description,severity
+locations,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
+locations,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
+locations,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM
+workers_synthetic,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
+workers_synthetic,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
+workers_synthetic,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM
+incidents,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
+incidents,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
+incidents,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM
+safety_observations,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
+safety_observations,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
+safety_observations,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM
+equipment,ROW_COUNT,Volume non nul et évolution expliquée,HIGH
+equipment,DUPLICATE_CHECK,Contrôle des clés métier / identifiants,HIGH
+equipment,NULL_RATE,Contrôle du taux de valeurs manquantes,MEDIUM

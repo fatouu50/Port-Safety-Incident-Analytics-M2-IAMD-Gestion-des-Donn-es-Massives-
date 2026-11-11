@@ -1,0 +1,22 @@
+file,column,type,description,example,candidate_key,nullable
+locations.csv,location_id,object,Location id,LOC001,YES,NO
+locations.csv,area_type,object,Area type,BERTH,NO,NO
+locations.csv,area_name,object,Area name,AREA_01,NO,NO
+workers_synthetic.csv,worker_id,object,Worker id,W0001,YES,NO
+workers_synthetic.csv,role,object,Role,SUPERVISOR,NO,NO
+workers_synthetic.csv,shift,object,Shift,A,NO,NO
+incidents.csv,incident_id,object,Identifiant incident,INC000001,YES,NO
+incidents.csv,incident_ts,object,Incident ts,2026-06-02 21:17:43,NO,NO
+incidents.csv,location_id,object,Location id,LOC016,NO,NO
+incidents.csv,equipment_id,object,Identifiant équipement,CHE34,NO,NO
+incidents.csv,severity,object,Sévérité,LOW,NO,NO
+incidents.csv,incident_type,object,Incident type,FALL,NO,NO
+incidents.csv,worker_id,object,Worker id,W0055,NO,NO
+safety_observations.csv,observation_id,int64,Observation id,1,YES,NO
+safety_observations.csv,observation_ts,object,Observation ts,2026-05-04 15:58:12,NO,NO
+safety_observations.csv,location_id,object,Location id,LOC006,NO,NO
+safety_observations.csv,observation_type,object,Observation type,SAFE,NO,NO
+safety_observations.csv,reported_by_role,object,Reported by role,SUPERVISOR,NO,NO
+equipment.csv,equipment_id,object,Identifiant équipement,CHE01,YES,NO
+equipment.csv,equipment_type,object,Equipment type,RMG,NO,NO
+equipment.csv,home_area,object,Home area,Y04,NO,NO
