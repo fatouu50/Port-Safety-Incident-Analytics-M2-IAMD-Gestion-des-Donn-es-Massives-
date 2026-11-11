@@ -1,0 +1,45 @@
+# Cluster HDFS : 1 NameNode + 2 DataNodes (image officielle Apache Hadoop 3.3.6)
+# Démarrer : docker compose up -d      Interface web : http://localhost:9870
+# Arrêter  : docker compose down       Tout effacer  : docker compose down -v
+
+services:
+  namenode:
+    image: apache/hadoop:3.3.6
+    container_name: namenode
+    hostname: namenode
+    user: root
+    # Formate HDFS seulement au premier démarrage, puis lance le NameNode
+    command: ["/bin/bash", "-c", "[ -d /tmp/hadoop-root/dfs/name/current ] || hdfs namenode -format -nonInteractive; hdfs namenode"]
+    ports:
+      - "9870:9870"   # interface web du NameNode
+    env_file: hadoop.env
+    volumes:
+      - nn_data:/tmp/hadoop-root/dfs/name
+
+  datanode1:
+    image: apache/hadoop:3.3.6
+    container_name: datanode1
+    hostname: datanode1
+    user: root
+    command: ["hdfs", "datanode"]
+    env_file: hadoop.env
+    depends_on: [namenode]
+    volumes:
+      - dn1_data:/tmp/hadoop-root/dfs/data
+
+  datanode2:
+    image: apache/hadoop:3.3.6
+    container_name: datanode2
+    hostname: datanode2
+    user: root
+    command: ["hdfs", "datanode"]
+    env_file: hadoop.env
+    depends_on: [namenode]
+    volumes:
+      - dn2_data:/tmp/hadoop-root/dfs/data
+
+# Volumes : les données HDFS restent conservées entre deux redémarrages
+volumes:
+  nn_data:
+  dn1_data:
+  dn2_data:
