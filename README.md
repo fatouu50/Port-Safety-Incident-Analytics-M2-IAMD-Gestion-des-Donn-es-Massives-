@@ -78,7 +78,7 @@ Conception du DWH : `04_ETL/dwh_conception.md`. Gouvernance : `06_GOVERNANCE/`
 - [x] 04_ETL
 - [x] 05_HDFS
 - [x] 06_GOVERNANCE
-- [ ] 07_EDA
+- [x] 07_EDA
 - [ ] Dashboard
 - [ ] 11_ARCHITECTURE
 - [ ] Rapport
