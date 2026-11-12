@@ -199,7 +199,7 @@ with onglet_zones:
     detail.columns = ["Zone", "Incidents", "Graves", "% UNSAFE", "Score"]
     col_droite.dataframe(detail, hide_index=True, width="stretch")
 
-    st.caption("Score = 50 % volume d'incidents + 30 % incidents graves + 20 % part d'observations UNSAFE, chaque terme rapporté au maximum. LOC015 (YARD) est la zone la plus à risque.")
+    st.caption("Score = 50 % incidents graves + 30 % nombre d'incidents + 20 % part d'observations UNSAFE, chaque terme rapporté au maximum. LOC015 (YARD) est la zone la plus à risque.")
 with onglet_equipes:
     taux = pd.read_sql_query("SELECT * FROM mart_incident_rate_shift_role", con)
     taux = taux[taux["shift"].isin(equipes_choisies)]   # slicer « Équipes »
