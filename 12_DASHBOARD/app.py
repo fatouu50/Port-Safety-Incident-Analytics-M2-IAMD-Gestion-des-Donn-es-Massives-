@@ -31,7 +31,10 @@ st.set_page_config(page_title="Projet 11 : sécurité portuaire", page_icon="⚓
 st.markdown("""
 <style>
 .block-container { padding-top: 2rem; }
-section[data-testid="stSidebar"] { background: #FDEEF5; }
+section[data-testid="stSidebar"] { background: linear-gradient(180deg, #4A1D6E 0%, #7B3FA0 100%); }
+section[data-testid="stSidebar"] label, section[data-testid="stSidebar"] p { color: #FFFFFF; }
+section[data-testid="stSidebar"] [data-testid="stImage"] img { background: #FFFFFF; border-radius: 14px; padding: 8px; }
+.titre-sidebar { color: #EE82B7; font-size: 0.8rem; font-weight: 700; letter-spacing: 1px; margin: 14px 0 4px 0; }
 .bandeau { background: linear-gradient(90deg, #4A1D6E 0%, #7B3FA0 60%, #EE82B7 100%); border-radius: 16px; padding: 22px 28px; margin-bottom: 22px; }
 .bandeau h1 { color: #FFFFFF; font-size: 1.9rem; margin: 0; padding: 0; }
 .bandeau p  { color: #EDE4F5; font-size: 0.95rem; margin: 6px 0 0 0; }
@@ -42,30 +45,46 @@ section[data-testid="stSidebar"] { background: #FDEEF5; }
 .carte .unite  { color: #6B6375; font-size: 0.8rem; }
 .carte.alerte  { background: #FDEEF5; }
 .carte.alerte .valeur { color: #9E1F5C; }
-.identite { color: #4A1D6E; font-size: 0.9rem; line-height: 1.5; }
-.identite b { color: #4A1D6E; }
+.identite { color: #FFFFFF; font-size: 0.88rem; line-height: 1.5; }
+.identite b { color: #FFFFFF; }
 .stTabs [aria-selected="true"] { color: #9E1F5C; }
 .a-venir { background: #FDEEF5; color: #4A1D6E; border-radius: 10px; padding: 12px 16px; }
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
-# Barre latérale : identité du projet
+# Barre latérale : identité du projet et filtres (slicers)
 # ---------------------------------------------------------------------
+mois_dispo = pd.read_sql_query("SELECT mois FROM mart_incidents_month ORDER BY mois", con)["mois"].tolist()
+types_zone = pd.read_sql_query("SELECT DISTINCT area_type FROM mart_incidents_by_area ORDER BY area_type", con)["area_type"].tolist()
+equipes = pd.read_sql_query("SELECT DISTINCT shift FROM mart_incident_rate_shift_role ORDER BY shift", con)["shift"].tolist()
+
 with st.sidebar:
-    st.image(str(LOGO), width=150)
+    st.image(str(LOGO), width=120)
     st.markdown("""
 <div class="identite">
 <b>Université de Djibouti</b><br>
-Master II Artificial Intelligence &amp; Data Science<br><br>
-<b>Gestion des Données Massives</b><br>
-Projet 11 : Port Safety &amp; Incident Analytics<br><br>
-<b>Groupe</b><br>
-Mako Mohamed Aden<br>
-Fatouma Soubere Mahamoud
+Master II Artificial Intelligence &amp; Data Science<br>
+Gestion des Données Massives
 </div>
+<div class="titre-sidebar">PROJET 11</div>
+<div class="identite">Port Safety &amp; Incident Analytics<br>Mako Mohamed Aden · Fatouma Soubere Mahamoud</div>
+<div class="titre-sidebar">FILTRES</div>
 """, unsafe_allow_html=True)
-    st.divider()
+
+    # Slicer 1 : la période (onglets 1 et 4)
+    debut, fin = st.select_slider("Période", options=mois_dispo, value=(mois_dispo[0], mois_dispo[-1]))
+    # Slicer 2 : les types de zone (onglet 2)
+    zones_choisies = st.multiselect("Types de zone", types_zone, default=types_zone)
+    # Slicer 3 : les équipes (onglet 3)
+    equipes_choisies = st.multiselect("Équipes", equipes, default=equipes)
+
+    # Si on vide un filtre, on reprend toutes les valeurs (les graphiques ne sont jamais vides)
+    if not zones_choisies:
+        zones_choisies = types_zone
+    if not equipes_choisies:
+        equipes_choisies = equipes
+
     st.caption("Source : tables MART du Data Warehouse (données synthétiques).")
 
 # ---------------------------------------------------------------------
@@ -123,13 +142,15 @@ with onglet_temps:
 
     # Graphique 1 : incidents par mois (octobre incomplet en gris)
     mois = pd.read_sql_query("SELECT * FROM mart_incidents_month ORDER BY mois", con)
+    mois = mois[(mois["mois"] >= debut) & (mois["mois"] <= fin)]
     moyenne = mois[mois["mois_complet"] == 1]["nb_incidents"].mean()
     couleurs = [ROSE if complet == 1 else GRIS_INCOMPLET for complet in mois["mois_complet"]]
 
     fig, ax = plt.subplots(figsize=(8, 4.2))
     ax.bar(mois["mois"].str[5:], mois["nb_incidents"], color=couleurs, label="Incidents")
     ax.bar(mois["mois"].str[5:], mois["nb_graves"], color=VIOLET_FONCE, label="dont graves")
-    ax.axhline(moyenne, color=VIOLET, linestyle="--", linewidth=1, label=f"Moyenne des mois complets ({moyenne:.0f})")
+    if pd.notna(moyenne):   # pas de moyenne si la période ne contient que le mois incomplet
+        ax.axhline(moyenne, color=VIOLET, linestyle="--", linewidth=1, label=f"Moyenne des mois complets ({moyenne:.0f})")
     ax.set_title("Incidents par mois en 2026 (octobre incomplet, en gris)", color=VIOLET_FONCE, loc="left")
     ax.set_xlabel("Mois")
     ax.spines[["top", "right"]].set_visible(False)
@@ -147,7 +168,7 @@ with onglet_temps:
     for i, ligne in gravite.iterrows():
         ax.text(i, ligne["nb_incidents"] + 10, f"{ligne['pct']:g} %".replace(".", ","), ha="center", color=VIOLET_FONCE)
     ax.set_ylim(0, gravite["nb_incidents"].max() * 1.15)
-    ax.set_title("Répartition par gravité", color=VIOLET_FONCE, loc="left")
+    ax.set_title("Répartition par gravité (toute la période)", color=VIOLET_FONCE, loc="left")
     ax.spines[["top", "right"]].set_visible(False)
     col_droite.pyplot(fig)
 
@@ -155,11 +176,7 @@ with onglet_temps:
 with onglet_zones:
     zones = pd.read_sql_query("SELECT * FROM mart_incidents_by_area ORDER BY score_risque DESC", con)
 
-    # Filtre : choisir un type de zone (ou toutes)
-    col_filtre, _ = st.columns([1, 3])
-    choix = col_filtre.selectbox("Type de zone", ["Toutes"] + sorted(zones["area_type"].unique()))
-    if choix != "Toutes":
-        zones = zones[zones["area_type"] == choix]
+    zones = zones[zones["area_type"].isin(zones_choisies)]   # slicer « Types de zone »
     top = zones.head(10)
 
     col_gauche, col_droite = st.columns([3, 2])
@@ -173,7 +190,7 @@ with onglet_zones:
         ax.text(score + 1, i, f"{score:g}".replace(".", ","), va="center", color=VIOLET_FONCE, fontsize=9)
     ax.set_xlim(0, 110)
     ax.set_xlabel("Score de risque (sur 100)")
-    ax.set_title(f"Top {len(top)} des zones les plus à risque ({choix.lower()})", color=VIOLET_FONCE, loc="left")
+    ax.set_title(f"Top {len(top)} des zones les plus à risque", color=VIOLET_FONCE, loc="left")
     ax.spines[["top", "right"]].set_visible(False)
     col_gauche.pyplot(fig)
 
@@ -185,6 +202,7 @@ with onglet_zones:
     st.caption("Score = 50 % volume d'incidents + 30 % incidents graves + 20 % part d'observations UNSAFE, chaque terme rapporté au maximum. LOC015 (YARD) est la zone la plus à risque.")
 with onglet_equipes:
     taux = pd.read_sql_query("SELECT * FROM mart_incident_rate_shift_role", con)
+    taux = taux[taux["shift"].isin(equipes_choisies)]   # slicer « Équipes »
     tableau = taux.pivot(index="role", columns="shift", values="incidents_par_travailleur")
 
     col_gauche, col_droite = st.columns([3, 2])
@@ -213,9 +231,6 @@ with onglet_equipes:
 with onglet_signaux:
     near_miss = pd.read_sql_query("SELECT * FROM mart_near_miss ORDER BY mois", con)
 
-    # Filtre : choisir une période de mois
-    tous_les_mois = near_miss["mois"].tolist()
-    debut, fin = st.select_slider("Période", options=tous_les_mois, value=(tous_les_mois[0], tous_les_mois[-1]))
     near_miss = near_miss[(near_miss["mois"] >= debut) & (near_miss["mois"] <= fin)]
 
     col_gauche, col_droite = st.columns([3, 2])
@@ -240,7 +255,7 @@ with onglet_signaux:
     for i, pct in enumerate(types["pct"]):
         ax.text(pct + 0.3, i, f"{pct:g} %".replace(".", ","), va="center", color=VIOLET_FONCE, fontsize=9)
     ax.set_xlim(0, types["pct"].max() * 1.25)
-    ax.set_title("Types d'incidents (% du total)", color=VIOLET_FONCE, loc="left")
+    ax.set_title("Types d'incidents (toute la période)", color=VIOLET_FONCE, loc="left")
     ax.spines[["top", "right"]].set_visible(False)
     col_droite.pyplot(fig)
 

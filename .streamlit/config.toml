@@ -1,7 +1,7 @@
 # Charte graphique du projet (voir README)
 [theme]
 base = "light"
-primaryColor = "#7B3FA0"
+primaryColor = "#EE82B7"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#EDE4F5"
 textColor = "#2D1B3D"
