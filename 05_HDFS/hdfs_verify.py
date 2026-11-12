@@ -38,3 +38,28 @@ for _, ligne in manifeste.iterrows():
 
 print()
 print(f"{nb_ok} fichiers sur {len(manifeste)} identiques dans HDFS")
+
+
+
+# ---------------------------------------------------------------------
+# Tables MART en Parquet : même empreinte MD5 dans HDFS que sur le PC
+# ---------------------------------------------------------------------
+print()
+print("Tables MART en Parquet :")
+dossier_mart = DOSSIER_05_HDFS / "archive" / "curated" / "mart"
+
+nb_ok_mart = 0
+fichiers_parquet = sorted(dossier_mart.glob("*.parquet"))
+for fichier in fichiers_parquet:
+    chemin_hdfs = HDFS_ARCHIVE + "/curated/mart/" + fichier.name
+    resultat = subprocess.run(
+        ["docker", "exec", "namenode", "hdfs", "dfs", "-cat", chemin_hdfs],
+        capture_output=True, check=True,
+    )
+    identique = hashlib.md5(resultat.stdout).hexdigest() == hashlib.md5(fichier.read_bytes()).hexdigest()
+    if identique:
+        nb_ok_mart += 1
+    print(f"  {'OK   ' if identique else 'ÉCART'} curated/mart/{fichier.name}")
+
+print()
+print(f"{nb_ok_mart} fichiers Parquet sur {len(fichiers_parquet)} identiques dans HDFS")

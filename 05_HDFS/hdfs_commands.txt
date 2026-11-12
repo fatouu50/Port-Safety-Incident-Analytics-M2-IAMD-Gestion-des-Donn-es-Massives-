@@ -28,3 +28,11 @@ docker start datanode1
 
 # 7. Vérification HDFS = manifeste (lignes et MD5)
 python hdfs_verify.py
+
+# 8. Tables MART en Parquet (après 04_ETL/etl_pipeline.py)
+python export_mart_parquet.py
+docker exec namenode rm -rf /tmp/curated
+docker cp archive/curated namenode:/tmp/curated
+docker exec namenode hdfs dfs -put -f /tmp/curated /port_exam/project_11/archive/
+docker exec namenode hdfs dfs -ls /port_exam/project_11/archive/curated/mart
+python hdfs_verify.py
