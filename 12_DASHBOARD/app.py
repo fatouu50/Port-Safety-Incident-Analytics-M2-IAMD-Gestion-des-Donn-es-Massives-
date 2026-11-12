@@ -31,11 +31,12 @@ st.set_page_config(page_title="Projet 11 : sécurité portuaire", page_icon="⚓
 st.markdown("""
 <style>
 .block-container { padding-top: 2rem; }
-.bandeau { background: #4A1D6E; border-radius: 16px; padding: 22px 28px; margin-bottom: 22px; }
+section[data-testid="stSidebar"] { background: #FDEEF5; }
+.bandeau { background: linear-gradient(90deg, #4A1D6E 0%, #7B3FA0 60%, #EE82B7 100%); border-radius: 16px; padding: 22px 28px; margin-bottom: 22px; }
 .bandeau h1 { color: #FFFFFF; font-size: 1.9rem; margin: 0; padding: 0; }
 .bandeau p  { color: #EDE4F5; font-size: 0.95rem; margin: 6px 0 0 0; }
-.section { color: #4A1D6E; font-size: 1.15rem; font-weight: 700; margin: 8px 0 10px 0; }
-.carte { background: #EDE4F5; border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; min-height: 120px; }
+.section { color: #4A1D6E; font-size: 1.15rem; font-weight: 700; margin: 8px 0 10px 0; border-left: 5px solid #EE82B7; padding-left: 10px; }
+.carte { background: #EDE4F5; border-left: 5px solid #EE82B7; border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; min-height: 120px; }
 .carte .titre  { color: #4A1D6E; font-size: 0.9rem; font-weight: 600; }
 .carte .valeur { color: #7B3FA0; font-size: 2.1rem; font-weight: 700; line-height: 1.3; }
 .carte .unite  { color: #6B6375; font-size: 0.8rem; }
@@ -43,6 +44,7 @@ st.markdown("""
 .carte.alerte .valeur { color: #9E1F5C; }
 .identite { color: #4A1D6E; font-size: 0.9rem; line-height: 1.5; }
 .identite b { color: #4A1D6E; }
+.stTabs [aria-selected="true"] { color: #9E1F5C; }
 .a-venir { background: #FDEEF5; color: #4A1D6E; border-radius: 10px; padding: 12px 16px; }
 </style>
 """, unsafe_allow_html=True)
@@ -114,7 +116,7 @@ for colonne, (_, ligne) in zip(colonnes, kpi.iterrows()):
 st.markdown('<div class="section">Analyses</div>', unsafe_allow_html=True)
 
 onglet_temps, onglet_zones, onglet_equipes, onglet_signaux, onglet_qualite = st.tabs(
-    ["Évolution mensuelle", "Zones à risque", "Rôles et équipes", "Signaux faibles", "Qualité des données"]
+    ["Évolution mensuelle", "Zones à risque", "Rôles et équipes", "Signaux faibles et types", "Qualité des données"]
 )
 with onglet_temps:
     col_gauche, col_droite = st.columns([3, 2])
@@ -122,12 +124,12 @@ with onglet_temps:
     # Graphique 1 : incidents par mois (octobre incomplet en gris)
     mois = pd.read_sql_query("SELECT * FROM mart_incidents_month ORDER BY mois", con)
     moyenne = mois[mois["mois_complet"] == 1]["nb_incidents"].mean()
-    couleurs = [VIOLET if complet == 1 else GRIS_INCOMPLET for complet in mois["mois_complet"]]
+    couleurs = [ROSE if complet == 1 else GRIS_INCOMPLET for complet in mois["mois_complet"]]
 
     fig, ax = plt.subplots(figsize=(8, 4.2))
     ax.bar(mois["mois"].str[5:], mois["nb_incidents"], color=couleurs, label="Incidents")
-    ax.bar(mois["mois"].str[5:], mois["nb_graves"], color=ROSE, label="dont graves")
-    ax.axhline(moyenne, color=VIOLET_FONCE, linestyle="--", linewidth=1, label=f"Moyenne des mois complets ({moyenne:.0f})")
+    ax.bar(mois["mois"].str[5:], mois["nb_graves"], color=VIOLET_FONCE, label="dont graves")
+    ax.axhline(moyenne, color=VIOLET, linestyle="--", linewidth=1, label=f"Moyenne des mois complets ({moyenne:.0f})")
     ax.set_title("Incidents par mois en 2026 (octobre incomplet, en gris)", color=VIOLET_FONCE, loc="left")
     ax.set_xlabel("Mois")
     ax.spines[["top", "right"]].set_visible(False)
@@ -163,7 +165,7 @@ with onglet_zones:
     col_gauche, col_droite = st.columns([3, 2])
 
     # Graphique : top 10 des zones par score de risque (la 1re en framboise)
-    couleurs = [COULEURS_GRAVITE["CRITICAL"] if i == 0 else VIOLET for i in range(len(top))]
+    couleurs = [COULEURS_GRAVITE["CRITICAL"] if i == 0 else ROSE for i in range(len(top))]
     fig, ax = plt.subplots(figsize=(8, 4.6))
     ax.barh(top["location_id"] + " · " + top["area_type"], top["score_risque"], color=couleurs)
     ax.invert_yaxis()
@@ -182,8 +184,68 @@ with onglet_zones:
 
     st.caption("Score = 50 % volume d'incidents + 30 % incidents graves + 20 % part d'observations UNSAFE, chaque terme rapporté au maximum. LOC015 (YARD) est la zone la plus à risque.")
 with onglet_equipes:
-    st.markdown("<div class='a-venir'>Heatmap rôle × équipe : à venir.</div>", unsafe_allow_html=True)
+    taux = pd.read_sql_query("SELECT * FROM mart_incident_rate_shift_role", con)
+    tableau = taux.pivot(index="role", columns="shift", values="incidents_par_travailleur")
+
+    col_gauche, col_droite = st.columns([3, 2])
+
+    # Heatmap : incidents par travailleur, pour chaque rôle et chaque équipe
+    fig, ax = plt.subplots(figsize=(7, 4.2))
+    image = ax.imshow(tableau, cmap="RdPu")
+    ax.set_xticks(range(len(tableau.columns)), [f"Équipe {e}" for e in tableau.columns])
+    ax.set_yticks(range(len(tableau.index)), tableau.index)
+    for i in range(len(tableau.index)):
+        for j in range(len(tableau.columns)):
+            v = tableau.iloc[i, j]
+            ax.text(j, i, f"{v:.2f}".replace(".", ","), ha="center", va="center",
+                    color="white" if v > tableau.values.mean() else VIOLET_FONCE)
+    fig.colorbar(image, ax=ax, label="Incidents par travailleur")
+    ax.set_title("Incidents par travailleur, selon le rôle et l'équipe", color=VIOLET_FONCE, loc="left")
+    col_gauche.pyplot(fig)
+
+    # Tableau : les groupes du plus exposé au moins exposé
+    classement = taux.sort_values("incidents_par_travailleur", ascending=False)
+    classement = classement[["role", "shift", "nb_incidents", "incidents_par_travailleur"]]
+    classement.columns = ["Rôle", "Équipe", "Incidents", "Par travailleur"]
+    col_droite.dataframe(classement, hide_index=True, width="stretch")
+
+    st.caption("On divise par le nombre de travailleurs pour comparer des groupes de tailles différentes. Les opérateurs de l'équipe A sont les plus exposés (4,84 incidents par personne).")
 with onglet_signaux:
-    st.markdown("<div class='a-venir'>Near-miss et incidents graves : à venir.</div>", unsafe_allow_html=True)
+    near_miss = pd.read_sql_query("SELECT * FROM mart_near_miss ORDER BY mois", con)
+
+    # Filtre : choisir une période de mois
+    tous_les_mois = near_miss["mois"].tolist()
+    debut, fin = st.select_slider("Période", options=tous_les_mois, value=(tous_les_mois[0], tous_les_mois[-1]))
+    near_miss = near_miss[(near_miss["mois"] >= debut) & (near_miss["mois"] <= fin)]
+
+    col_gauche, col_droite = st.columns([3, 2])
+
+    # Graphique 1 : near-miss (barres roses) et incidents graves (ligne violette)
+    fig, ax = plt.subplots(figsize=(8, 4.2))
+    ax.bar(near_miss["mois"].str[5:], near_miss["near_miss_total"], color=ROSE, label="Near-miss (incidents + observations)")
+    ax.plot(near_miss["mois"].str[5:], near_miss["incidents_graves"], color=VIOLET_FONCE, marker="o", label="Incidents graves")
+    ax.set_ylim(0, near_miss["near_miss_total"].max() * 1.25)
+    ax.set_xlabel("Mois")
+    ax.set_title("Near-miss et incidents graves par mois", color=VIOLET_FONCE, loc="left")
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.legend(frameon=False, fontsize=8, ncol=2, loc="upper left")
+    col_gauche.pyplot(fig)
+
+    # Graphique 2 : les types d'incidents, du plus fréquent au moins fréquent
+    types = pd.read_sql_query("SELECT * FROM mart_recurring_incident_type ORDER BY rang", con)
+    couleurs = [COULEURS_GRAVITE["CRITICAL"] if i == 0 else VIOLET for i in range(len(types))]
+    fig, ax = plt.subplots(figsize=(5, 4.2))
+    ax.barh(types["incident_type"], types["pct"], color=couleurs)
+    ax.invert_yaxis()
+    for i, pct in enumerate(types["pct"]):
+        ax.text(pct + 0.3, i, f"{pct:g} %".replace(".", ","), va="center", color=VIOLET_FONCE, fontsize=9)
+    ax.set_xlim(0, types["pct"].max() * 1.25)
+    ax.set_title("Types d'incidents (% du total)", color=VIOLET_FONCE, loc="left")
+    ax.spines[["top", "right"]].set_visible(False)
+    col_droite.pyplot(fig)
+
+    ratio = near_miss["near_miss_total"].sum() / near_miss["incidents_graves"].sum()
+    ratio_texte = f"{ratio:.1f}".replace(".", ",")
+    st.caption(f"Sur la période choisie : {ratio_texte} near-miss pour 1 incident grave. Les types sont très proches (15 à 18 %) : aucun ne domine, il faut agir sur tous.")
 with onglet_qualite:
     st.markdown("<div class='a-venir'>Statut des règles qualité et dernier run de l'ETL : partie de Mako.</div>", unsafe_allow_html=True)
