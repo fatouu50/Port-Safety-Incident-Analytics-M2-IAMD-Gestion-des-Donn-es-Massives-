@@ -86,18 +86,25 @@ Conception du DWH : `04_ETL/dwh_conception.md`. Gouvernance : `06_GOVERNANCE/`
 
 ## Charte graphique
 
-Rose + violet + blanc. Le violet domine, le rose sert d'accent, les fonds restent clairs.
+Rose + violet + blanc, à parts égales : le violet structure (titres, barre latérale), le rose anime (barres principales, filtres, accents), les fonds restent clairs.
 
 | Couleur | Code | Rôle |
 |---|---|---|
-| Violet foncé | `#4A1D6E` | Titres, texte fort, ligne de moyenne |
-| Violet | `#7B3FA0` | Couleur principale des graphiques |
-| Rose | `#EE82B7` | Accent, mise en évidence |
-| Lavande | `#EDE4F5` | Fonds des cartes |
-| Rose pâle | `#FDEEF5` | Fonds doux |
-| Blanc | `#FFFFFF` | Fond de page |
+| Violet foncé | `#4A1D6E` | Titres, texte fort, incidents graves dans les graphiques, haut de la barre latérale |
+| Violet | `#7B3FA0` | Chiffres des cartes KPI, ligne de moyenne, bas de la barre latérale |
+| Rose | `#EE82B7` | Couleur principale du thème (filtres, onglet actif), barres principales, liserés des cartes et des titres |
+| Lavande | `#EDE4F5` | Fond des cartes KPI |
+| Rose pâle | `#FDEEF5` | Fond des cartes en alerte et des messages d'attente |
+| Blanc | `#FFFFFF` | Fond de page, texte de la barre latérale |
 | Gravité | `#D9C8EA` → `#A77BC9` → `#EE82B7` → `#9E1F5C` | LOW → MEDIUM → HIGH → CRITICAL |
-| Mois incomplet | `#CFC8D6` | Octobre |
+| Framboise | `#9E1F5C` | Valeur des cartes en alerte, 1re barre d'un classement |
+| Mois incomplet | `#CFC8D6` | Octobre (s'arrête au 28) |
 | Statuts qualité | `#2E8B57` / `#D99A1B` | OK / ALERTE |
 
-Règles : le rose reste rare ; jamais de texte rose sur fond blanc ; les statuts qualité gardent vert et orange.
+Dégradés :
+- barre latérale : violet foncé → violet (de haut en bas) ;
+- bandeau du haut : violet foncé → violet → rose (de gauche à droite).
+
+Le thème Streamlit est réglé dans `.streamlit/config.toml` (`primaryColor = "#EE82B7"`).
+
+Règles : jamais de texte rose sur fond blanc (illisible) ; la framboise est réservée à ce qui doit attirer l'œil ; les statuts qualité gardent vert et orange.
