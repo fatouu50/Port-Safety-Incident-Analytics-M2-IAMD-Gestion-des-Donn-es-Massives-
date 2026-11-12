@@ -1,0 +1,10 @@
+# Charte graphique du projet (voir README)
+[theme]
+base = "light"
+primaryColor = "#EE82B7"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#EDE4F5"
+textColor = "#2D1B3D"
+
+[client]
+toolbarMode = "minimal"

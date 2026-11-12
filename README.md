@@ -83,3 +83,21 @@ Conception du DWH : `04_ETL/dwh_conception.md`. Gouvernance : `06_GOVERNANCE/`
 - [ ] 11_ARCHITECTURE
 - [ ] Rapport
 - [ ] Présentation
+
+## Charte graphique
+
+Rose + violet + blanc. Le violet domine, le rose sert d'accent, les fonds restent clairs.
+
+| Couleur | Code | Rôle |
+|---|---|---|
+| Violet foncé | `#4A1D6E` | Titres, texte fort, ligne de moyenne |
+| Violet | `#7B3FA0` | Couleur principale des graphiques |
+| Rose | `#EE82B7` | Accent, mise en évidence |
+| Lavande | `#EDE4F5` | Fonds des cartes |
+| Rose pâle | `#FDEEF5` | Fonds doux |
+| Blanc | `#FFFFFF` | Fond de page |
+| Gravité | `#D9C8EA` → `#A77BC9` → `#EE82B7` → `#9E1F5C` | LOW → MEDIUM → HIGH → CRITICAL |
+| Mois incomplet | `#CFC8D6` | Octobre |
+| Statuts qualité | `#2E8B57` / `#D99A1B` | OK / ALERTE |
+
+Règles : le rose reste rare ; jamais de texte rose sur fond blanc ; les statuts qualité gardent vert et orange.
