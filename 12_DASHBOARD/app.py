@@ -263,4 +263,104 @@ with onglet_signaux:
     ratio_texte = f"{ratio:.1f}".replace(".", ",")
     st.caption(f"Sur la période choisie : {ratio_texte} near-miss pour 1 incident grave. Les types sont très proches (15 à 18 %) : aucun ne domine, il faut agir sur tous.")
 with onglet_qualite:
-    st.markdown("<div class='a-venir'>Statut des règles qualité et dernier run de l'ETL : partie de Mako.</div>", unsafe_allow_html=True)
+    # Couleurs des statuts qualité (OK et ALERTE : charte ; ECHEC : framboise ; REJETS : violet)
+    COULEURS_STATUT = {"OK": "#2E8B57", "ALERTE": "#D99A1B", "ECHEC": "#9E1F5C", "REJETS": "#7B3FA0"}
+    GRAVITE_STATUT = ["OK", "REJETS", "ALERTE", "ECHEC"]   # du moins grave au plus grave
+
+    # Lecture seule (SELECT) : jamais la colonne « record » de stg_rejects (elle contient le worker_id)
+    dq = pd.read_sql_query(
+        "SELECT regle, table_name, nb_controles, nb_echecs, statut, detail FROM dq_results ORDER BY regle, table_name", con)
+    nb_rejets = pd.read_sql_query("SELECT COUNT(*) AS n FROM stg_rejects", con)["n"][0]
+    dernier_run = pd.read_sql_query(
+        "SELECT debut, duree_s, statut, nb_raw, nb_faits, nb_lignes_mart, message FROM etl_run_log ORDER BY debut DESC LIMIT 1", con)
+
+    # Une ligne par règle : le pire statut de ses contrôles
+    dq["gravite"] = dq["statut"].map(GRAVITE_STATUT.index)
+    regles = dq.groupby("regle").agg(
+        tables=("table_name", "nunique"), echecs=("nb_echecs", "sum"), gravite=("gravite", "max")).reset_index()
+    regles["statut"] = regles["gravite"].map(lambda g: GRAVITE_STATUT[g])
+    alertes = dq[dq["statut"] == "ALERTE"].drop_duplicates("regle").set_index("regle")["detail"]
+    regles["detail"] = regles["regle"].map(alertes).fillna("")
+    nb_regles = len(regles)
+    nb_ok = int((regles["statut"] == "OK").sum())
+    nb_alertes = int((regles["statut"] == "ALERTE").sum())
+
+    # --- 3 cartes : règles OK, rejets, alertes ---
+    st.markdown('<div class="section">Résultat des contrôles</div>', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
+    c1.markdown(
+        f'<div class="carte"><div class="titre">Règles OK</div>'
+        f'<div class="valeur">{nb_ok} sur {nb_regles}</div><div class="unite">règles DQ01 à DQ12</div></div>',
+        unsafe_allow_html=True)
+    classe_rejets = "carte alerte" if nb_rejets > 0 else "carte"
+    c2.markdown(
+        f'<div class="{classe_rejets}"><div class="titre">Rejets</div>'
+        f'<div class="valeur">{nb_rejets}</div><div class="unite">lignes dans stg_rejects</div></div>',
+        unsafe_allow_html=True)
+    if nb_rejets == 0:
+        c2.caption("0 rejet sur les données officielles, qui sont propres. Les contrôles sont prouvés par test_etl.py, "
+                   "qui injecte 11 anomalies et obtient 11 rejets tracés.")
+    else:
+        c2.caption(f"{nb_rejets} lignes refusées : voir stg_rejects. Les contrôles sont prouvés par test_etl.py, "
+                   "qui injecte 11 anomalies et obtient 11 rejets tracés.")
+    classe_alertes = "carte alerte" if nb_alertes > 0 else "carte"
+    c3.markdown(
+        f'<div class="{classe_alertes}"><div class="titre">Alertes</div>'
+        f'<div class="valeur">{nb_alertes}</div><div class="unite">à analyser, le run continue</div></div>',
+        unsafe_allow_html=True)
+
+    # --- Tableau des règles, statut en couleur ---
+    st.markdown('<div class="section">Règles qualité DQ01 à DQ12</div>', unsafe_allow_html=True)
+
+    def colorier(statut):
+        return f"background-color: {COULEURS_STATUT[statut]}; color: white; font-weight: 600"
+
+    tableau_regles = regles[["regle", "tables", "echecs", "statut", "detail"]]
+    tableau_regles.columns = ["Règle", "Tables contrôlées", "Échecs", "Statut", "Détail"]
+    st.dataframe(tableau_regles.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch")
+
+    with st.expander("Voir les contrôles ligne par ligne"):
+        tableau_dq = dq[["regle", "table_name", "nb_controles", "nb_echecs", "statut", "detail"]]
+        tableau_dq.columns = ["Règle", "Table", "Contrôles", "Échecs", "Statut", "Détail"]
+        st.dataframe(tableau_dq.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch")
+
+    # --- Dernier run de l'ETL ---
+    st.markdown('<div class="section">Dernier run de l\'ETL</div>', unsafe_allow_html=True)
+    if dernier_run.empty:
+        st.markdown("<div class='a-venir'>Aucun run enregistré : lancer 04_ETL/etl_pipeline.py.</div>", unsafe_allow_html=True)
+    else:
+        run = dernier_run.iloc[0]
+        date_run = pd.to_datetime(run["debut"]).strftime("%d/%m/%Y %H:%M:%S")
+        duree = f"{run['duree_s']:.2f}".replace(".", ",")
+        couleur_statut = COULEURS_STATUT["OK"] if run["statut"] == "SUCCES" else COULEURS_STATUT["ECHEC"]
+        r1, r2, r3, r4 = st.columns(4)
+        r1.markdown(
+            f'<div class="carte"><div class="titre">Date du run</div>'
+            f'<div class="valeur" style="font-size:1.5rem">{date_run}</div><div class="unite">début</div></div>',
+            unsafe_allow_html=True)
+        r2.markdown(
+            f'<div class="carte"><div class="titre">Durée</div>'
+            f'<div class="valeur">{duree}</div><div class="unite">secondes</div></div>',
+            unsafe_allow_html=True)
+        r3.markdown(
+            f'<div class="carte"><div class="titre">Statut</div>'
+            f'<div class="valeur" style="color:{couleur_statut}">{run["statut"]}</div><div class="unite">publication de la base</div></div>',
+            unsafe_allow_html=True)
+        r4.markdown(
+            f'<div class="carte"><div class="titre">Lignes traitées</div>'
+            f'<div class="valeur" style="font-size:1.5rem">{run["nb_raw"]:,} → {run["nb_faits"]:,}'.replace(",", " ") +
+            f'</div><div class="unite">RAW → faits ({run["nb_lignes_mart"]} lignes MART)</div></div>',
+            unsafe_allow_html=True)
+        if run["message"]:
+            st.caption(f"Message : {run['message']}")
+
+    # --- Note sur les 2 alertes connues ---
+    detail_dq10 = alertes.get("DQ10", "2026-05 +29.5 % vs 2026-04").replace(".", ",")
+    st.markdown('<div class="section">Les 2 alertes connues</div>', unsafe_allow_html=True)
+    st.markdown(
+        "<div class='a-venir'>"
+        f"<b>DQ10 : variation mensuelle ({detail_dq10}).</b> Mai dépasse le seuil de 25 % fixé par le groupe. "
+        "C'est un signal que le HSE doit analyser, pas une erreur de données : le pic de mai se voit aussi dans l'onglet « Évolution mensuelle ».<br><br>"
+        "<b>DQ11 : home_area des engins.</b> Les valeurs (Yxx) ne correspondent à aucune zone (LOCxxx) : on ne peut pas relier les engins aux zones. "
+        "C'est une limite des données, connue et documentée ; les engins restent dans le Data Warehouse, sans lien vers les zones."
+        "</div>", unsafe_allow_html=True)
