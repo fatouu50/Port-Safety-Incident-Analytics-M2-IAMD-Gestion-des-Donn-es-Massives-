@@ -1,0 +1,40 @@
+_run_id,regle,table_name,nb_controles,nb_echecs,statut,detail
+20261112_090459,DQ01,locations,25,0,OK,volume non nul
+20261112_090459,DQ02,locations,25,0,OK,
+20261112_090459,DQ03,locations,25,0,OK,
+20261112_090459,DQ04,locations,25,0,OK,
+20261112_090459,DQ06,locations,25,0,OK,
+20261112_090459,DQ01,workers_synthetic,350,0,OK,volume non nul
+20261112_090459,DQ02,workers_synthetic,350,0,OK,
+20261112_090459,DQ03,workers_synthetic,350,0,OK,
+20261112_090459,DQ04,workers_synthetic,350,0,OK,
+20261112_090459,DQ06,workers_synthetic,350,0,OK,
+20261112_090459,DQ01,equipment,40,0,OK,volume non nul
+20261112_090459,DQ02,equipment,40,0,OK,
+20261112_090459,DQ03,equipment,40,0,OK,
+20261112_090459,DQ04,equipment,40,0,OK,
+20261112_090459,DQ06,equipment,40,0,OK,
+20261112_090459,DQ01,incidents,1400,0,OK,volume non nul
+20261112_090459,DQ02,incidents,1400,0,OK,
+20261112_090459,DQ03,incidents,1400,0,OK,
+20261112_090459,DQ04,incidents,1400,0,OK,
+20261112_090459,DQ05,incidents,1400,0,OK,
+20261112_090459,DQ06,incidents,1400,0,OK,
+20261112_090459,DQ07,incidents,1400,0,OK,
+20261112_090459,DQ01,safety_observations,3500,0,OK,volume non nul
+20261112_090459,DQ02,safety_observations,3500,0,OK,
+20261112_090459,DQ03,safety_observations,3500,0,OK,
+20261112_090459,DQ04,safety_observations,3500,0,OK,
+20261112_090459,DQ05,safety_observations,3500,0,OK,
+20261112_090459,DQ06,safety_observations,3500,0,OK,
+20261112_090459,DQ07,safety_observations,3500,0,OK,
+20261112_090459,DQ11,equipment,40,40,ALERTE,home_area (Yxx) ne correspond à aucune location_id (LOCxxx)
+20261112_090459,DQ08,locations,25,0,OK,RAW 25 = rejets 0 + dim_location 25
+20261112_090459,DQ08,workers_synthetic,350,0,OK,RAW 350 = rejets 0 + dim_worker 350
+20261112_090459,DQ08,equipment,40,0,OK,RAW 40 = rejets 0 + dim_equipment 40
+20261112_090459,DQ08,incidents,1400,0,OK,RAW 1400 = rejets 0 + fact_incident 1400
+20261112_090459,DQ08,safety_observations,3500,0,OK,RAW 3500 = rejets 0 + fact_safety_observation 3500
+20261112_090459,DQ09,fact_incident,1,0,OK,"dernier événement 2026-10-28, âge 15 j, seuil 31 j"
+20261112_090459,DQ09,fact_safety_observation,1,0,OK,"dernier événement 2026-10-28, âge 15 j, seuil 31 j"
+20261112_090459,DQ10,mart_incidents_month,8,1,ALERTE,2026-05 +29.5 % vs 2026-04
+20261112_090459,DQ12,sources,5,0,OK,sources identiques au run précédent (MD5)

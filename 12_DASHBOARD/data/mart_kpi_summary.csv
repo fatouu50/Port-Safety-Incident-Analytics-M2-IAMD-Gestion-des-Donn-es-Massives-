@@ -1,0 +1,9 @@
+kpi_id,kpi,libelle,valeur,unite
+KPI1,Incidents/month,"Moyenne mensuelle des incidents sur les mois complets (octobre exclu, il s'arrête au 28)",144.0,incidents/mois
+KPI2,Severity distribution,Part des incidents graves (gravité HIGH ou CRITICAL),22.3,%
+KPI3,Incidents by area,Score de risque de la zone la plus à risque : LOC015 (YARD),95.4,score /100
+KPI4,Near-miss count,Presque-accidents : incidents NEAR_MISS + observations NEAR_MISS,759.0,near-miss
+KPI5,Recurring incident type,Part du type d'incident le plus fréquent : SPILL (253 incidents),18.1,%
+KPI6,Incident rate by shift/role,"Incidents par travailleur du groupe le plus touché : OPERATOR, équipe A (par effectif, faute d'heures travaillées)",4.84,incidents/travailleur
+KPI7,Unsafe observations,Part des observations de terrain classées UNSAFE,29.4,%
+KPI8,Total incidents,Nombre d'incidents chargés dans le DWH (contrôle de réconciliation),1400.0,incidents

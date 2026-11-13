@@ -1,0 +1,7 @@
+rang,incident_type,nb_incidents,pct
+1,SPILL,253,18.1
+2,FALL,240,17.1
+3,COLLISION,238,17.0
+4,PPE,227,16.2
+5,NEAR_MISS,225,16.1
+6,EQUIPMENT,217,15.5

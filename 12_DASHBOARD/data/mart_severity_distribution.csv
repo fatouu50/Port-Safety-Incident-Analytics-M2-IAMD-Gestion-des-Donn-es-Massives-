@@ -1,0 +1,5 @@
+severity,nb_incidents,pct
+LOW,663,47.4
+MEDIUM,425,30.4
+HIGH,239,17.1
+CRITICAL,73,5.2
