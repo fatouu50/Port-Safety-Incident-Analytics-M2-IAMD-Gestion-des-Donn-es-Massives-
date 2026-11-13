@@ -33,11 +33,11 @@ Le tableau 1 relie chaque KPI à une décision. C'est le fil du rapport : un chi
 
 ## 1.4 Les utilisateurs
 
-Le sujet nomme un seul utilisateur : le service HSE. Le groupe a défini quatre autres rôles dans sa politique d'accès. C'est une hypothèse d'organisation, et non une donnée du sujet.
+Le sujet nomme un seul utilisateur : le service HSE. Le groupe a défini cinq rôles dans sa politique d'accès, dont quatre sont des personnes et un est un compte de service, c'est-à-dire un accès réservé à un programme. C'est une hypothèse d'organisation, et non une donnée du sujet.
 
 - **Le responsable HSE** lit les indicateurs et décide des actions.
 - **L'analyste** explore les données avec Python.
-- **Le dashboard** affiche les indicateurs à l'écran. Un dashboard est un tableau de bord interactif.
+- **Le dashboard** n'est pas une personne : c'est le compte de service du tableau de bord interactif, qui lit les indicateurs pour les afficher à l'écran.
 - **L'auditeur qualité** vérifie les contrôles et les lignes rejetées.
 - **Le data engineer** construit et exploite la chaîne de traitement. Ce rôle est tenu par le groupe.
 
@@ -53,4 +53,4 @@ La chaîne complète tient en une ligne : fichiers CSV → SQL → Data Warehous
 
 - Les données sont synthétiques. Les résultats illustrent la méthode ; ils ne décrivent pas un terminal réel. *Source : sujet, § 2.*
 - Le sujet ne définit ni « incident grave », ni la formule d'un score de risque par zone. Le groupe a posé ses propres définitions, signalées à chaque usage (hypothèses H1 à H4, section 4).
-- La répartition du travail dans le groupe est la suivante : Fatouma Soubere Mahamoud a réalisé le SQL, HDFS et l'analyse exploratoire ; Mako Mohamed Aden a réalisé le Data Warehouse, l'ETL et la gouvernance. *Source : `06_GOVERNANCE/GOVERNANCE_CHECKLIST.md`, § 1.*
+- La répartition du travail dans le groupe est la suivante : Fatouma Soubere Mahamoud a réalisé le SQL, HDFS et l'analyse exploratoire ; Mako Mohamed Aden a réalisé le Data Warehouse, l'ETL et la gouvernance. Le dashboard a été fait à deux : Fatouma a réalisé les onglets 1 à 4 (évolution mensuelle, zones à risque, rôles et équipes, signaux faibles et types) et Mako l'onglet 5 (qualité des données). *Source : `06_GOVERNANCE/GOVERNANCE_CHECKLIST.md`, § 1.*

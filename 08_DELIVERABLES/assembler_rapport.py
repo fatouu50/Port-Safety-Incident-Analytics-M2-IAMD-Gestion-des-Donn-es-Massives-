@@ -53,6 +53,7 @@ STYLE = """
 @page { size: A4; margin: 2cm 2cm 2.1cm 2cm;
         @bottom-center { content: counter(page); font-family: 'Segoe UI', Arial, sans-serif; font-size: 9pt; color: #6B6375; }
         @top-right { content: "Projet 11 : Port Safety & Incident Analytics"; font-family: 'Segoe UI', Arial, sans-serif; font-size: 8pt; color: #9A93A3; } }
+@page paysage { size: A4 landscape; margin: 1.2cm 1.5cm 1.4cm 1.5cm; }
 @page :first { @bottom-center { content: none; } @top-right { content: none; } }
 * { box-sizing: border-box; }
 body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; font-size: 10pt; line-height: 1.38; color: #2B2333; margin: 0; }
@@ -77,6 +78,12 @@ p.legende strong { color: #7B3FA0; }
 table + p.legende, p.figure + p.legende { break-after: auto; }
 p.figure { text-align: center; margin: 10px 0 4px 0; break-after: avoid; break-inside: avoid; }
 p.figure img { max-width: 100%; max-height: 10.8cm; }
+/* Schémas pleine page : une page A4 en paysage, image agrandie à la hauteur disponible */
+div.paysage { page: paysage; break-before: page; break-after: page; }
+div.paysage p.figure { margin: 0 0 4px 0; break-after: avoid; }
+div.paysage h2 { margin: 0 0 4px 0; }
+div.paysage p.figure img { max-width: none; max-height: 15.6cm; width: auto; height: 15.6cm; }
+div.paysage p.legende { margin: 2px 0 0 0; text-align: center; }
 p.deux-figures img { width: 49%; max-height: 6.2cm; object-fit: contain; vertical-align: top; }
 span.marqueur { background: #FFE98A; color: #7A4B00; font-weight: 700; padding: 1px 4px; border-radius: 3px; }
 /* Page de garde */
@@ -134,6 +141,10 @@ def en_html(texte_md):
     # Paragraphes d'images : une image seule, ou deux images côte à côte
     html = re.sub(r"<p>(<img [^>]*>\s*<img [^>]*>)</p>", r'<p class="figure deux-figures">\1</p>', html)
     html = re.sub(r"<p>(<img [^>]*>)</p>", r'<p class="figure">\1</p>', html)
+    # Un schéma seul (avec son titre) est placé sur une page A4 en paysage, pour rester lisible une fois imprimé
+    html = re.sub(r'(<p class="figure">(?:(?!</p>).)*</p>\s*<p class="legende">.*?</p>)', r'<div class="paysage">\1</div>', html, flags=re.S)
+    # Le sous-titre qui précède un schéma pleine page passe sur la page du schéma (sinon il resterait seul en bas de page)
+    html = re.sub(r'(<h2>[^<]*</h2>)\s*(<div class="paysage">)', r'\2\1', html)
     # Sources et déductions, en petit
     html = re.sub(r"<em>((?:Source|Déduction)[^<]*(?:<code>[^<]*</code>[^<]*)*)</em>", r'<em class="source">\1</em>', html)
     return html

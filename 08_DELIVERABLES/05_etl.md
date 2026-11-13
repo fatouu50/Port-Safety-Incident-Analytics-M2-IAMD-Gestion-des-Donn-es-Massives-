@@ -53,7 +53,7 @@ Le service HSE décide à partir de chiffres : il doit pouvoir leur faire confia
 
 **L'idempotence.** Un traitement est idempotent s'il donne le même résultat quand on le relance. Exemple : deux runs de suite produisent deux fois 1 400 incidents, et non 2 800. Le pipeline reconstruit toute la base à chaque run. *Source : `04_ETL/test_etl.py`, test 1.*
 
-**Le rollback.** Un rollback est un retour à l'état précédent en cas d'erreur. Le pipeline construit la nouvelle base dans un fichier temporaire. Il ne remplace l'ancienne base qu'à la fin, si tous les contrôles bloquants passent. En cas de panne, l'ancienne base reste en place et l'échec est noté dans `etl_run_log`. Le service HSE ne lit donc jamais une base à moitié construite. *Source : `04_ETL/etl_pipeline.py`, étape 5.8.*
+**Le rollback.** Un rollback est un retour à l'état précédent en cas d'erreur. Le pipeline construit la nouvelle base dans un fichier temporaire. Il ne remplace l'ancienne base qu'à la fin, si tous les contrôles bloquants passent. En cas de panne, l'ancienne base reste en place et l'échec est noté dans `etl_run_log`. Le service HSE ne lit donc jamais une base à moitié construite. Le journal `etl_run_log` est conservé d'un run à l'autre : avant de reconstruire la base, le pipeline relit l'historique de l'ancienne et y ajoute la ligne du nouveau run. Exemple : après le test de panne, le journal contient deux lignes, SUCCES puis ECHEC. *Source : `04_ETL/etl_pipeline.py`, étapes 5.7 et 5.8 ; `04_ETL/test_etl.py`, test 3.*
 
 **Le rejet ligne par ligne.** Une ligne fausse ne bloque pas les autres. Elle est mise de côté avec sa raison, pour que la source soit corrigée. *Source : `04_ETL/etl_pipeline.py`, étape 5.2.*
 

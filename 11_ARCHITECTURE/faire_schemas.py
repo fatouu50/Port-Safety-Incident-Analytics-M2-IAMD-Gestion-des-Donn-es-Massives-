@@ -11,6 +11,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 
+# Police plus étroite que la police par défaut : le texte tient dans les boîtes (repli sur la police par défaut)
+plt.rcParams["font.family"] = ["Segoe UI", "Arial", "DejaVu Sans"]
+
 DOSSIER_ARCHITECTURE = Path(__file__).resolve().parent
 DOSSIER_ETL = DOSSIER_ARCHITECTURE.parent / "04_ETL"
 
@@ -26,7 +29,7 @@ VERT = "#2E8B57"
 
 
 def boite(ax, x, y, largeur, hauteur, titre, lignes=(), fond=LAVANDE, bord=VIOLET, couleur_titre=VIOLET_FONCE,
-          taille_titre=9.5, taille_texte=7.5, gauche=False):
+          taille_titre=8.5, taille_texte=7, gauche=False):
     """Dessine une boîte arrondie avec un titre en gras et des lignes de texte (centrées ou alignées à gauche)."""
     ax.add_patch(FancyBboxPatch((x, y), largeur, hauteur, boxstyle="round,pad=0.02,rounding_size=0.12",
                                 facecolor=fond, edgecolor=bord, linewidth=1.4))
@@ -51,13 +54,13 @@ def fleche(ax, depart, arrivee, texte="", couleur=VIOLET, style="-", decalage=(0
 # ---------------------------------------------------------------------
 # Schéma 1 : architecture finale
 # ---------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=(11.7, 8.3))   # A4 paysage
+fig, ax = plt.subplots(figsize=(9.4, 6.5))   # taille réelle sur une page A4 paysage (le rapport l'imprime sans l'agrandir)
 ax.set_xlim(0, 23.4)
 ax.set_ylim(0, 16.6)
 ax.axis("off")
 
 ax.text(0.3, 16.2, "Architecture finale : des fichiers sources aux décisions du service HSE",
-        fontsize=14, fontweight="bold", color=VIOLET_FONCE, va="center")
+        fontsize=12, fontweight="bold", color=VIOLET_FONCE, va="center")
 
 # Bandeau du Data Warehouse (derrière les 4 couches)
 ax.add_patch(FancyBboxPatch((4.55, 9.0), 13.7, 6.4, boxstyle="round,pad=0.02,rounding_size=0.15",
@@ -71,13 +74,13 @@ boite(ax, 0.3, y, 3.6, h, "SOURCES", ["5 fichiers CSV", "(01_DATA_RAW)", "", "in
                                     "zones : 25", "travailleurs : 350", "engins : 40", "", "Total : 5 315 lignes"],
       fond="#FFFFFF", bord=GRIS, couleur_titre=GRIS)
 boite(ax, 4.9, y, 2.95, h, "RAW", ["copie fidèle,", "tout en texte", "", "5 tables raw_*", "+ raw_manifest", "5 315 lignes", "",
-                                   "Règles DQ01, DQ12", "", "confidentiel"])
+                                   "DQ01 et DQ12", "", "confidentiel"])
 boite(ax, 8.3, y, 2.95, h, "STAGING", ["nettoyage", "et contrôles", "", "5 tables stg_*", "+ stg_rejects", "0 rejet", "",
-                                       "Règles DQ02 à DQ07", "", "confidentiel"])
+                                       "DQ02 à DQ07", "", "confidentiel"])
 boite(ax, 11.7, y, 2.95, h, "CORE", ["schéma en étoile", "", "9 dimensions", "2 tables de faits", "1 400 incidents",
-                                     "3 500 observations", "", "Règle DQ08", "", "confidentiel"])
+                                     "3 500 observations", "", "DQ08", "", "confidentiel"])
 boite(ax, 15.1, y, 2.95, h, "MART", ["tables prêtes", "pour l'analyse", "", "7 tables mart_*", "8 KPI, 75 lignes",
-                                     "aucun worker_id", "", "Règles DQ09, DQ10", "", "interne"], fond=ROSE_PALE, bord=ROSE)
+                                     "aucun worker_id", "", "DQ09 et DQ10", "", "interne"], fond=ROSE_PALE, bord=ROSE)
 for x_depart, x_arrivee in [(3.9, 4.9), (7.85, 8.3), (11.25, 11.7), (14.65, 15.1)]:
     fleche(ax, (x_depart, 11.9), (x_arrivee, 11.9))
 
@@ -85,7 +88,7 @@ for x_depart, x_arrivee in [(3.9, 4.9), (7.85, 8.3), (11.25, 11.7), (14.65, 15.1
 boite(ax, 19.0, 12.5, 4.1, 2.5, "EDA (Python)", ["07_EDA/eda_projet11.ipynb", "6 graphiques interprétés", "lit les MART seulement"],
       fond="#FFFFFF", bord=VIOLET)
 boite(ax, 19.0, 9.2, 4.1, 2.9, "DASHBOARD (Streamlit)", ["12_DASHBOARD/app.py", "8 cartes KPI, 5 onglets", "dont Qualité des données",
-                                                        "lit les MART et le suivi"], fond="#FFFFFF", bord=VIOLET, taille_titre=8)
+                                                        "lit les MART et le suivi"], fond="#FFFFFF", bord=VIOLET, taille_titre=7.8)
 fleche(ax, (18.05, 12.6), (19.0, 13.5))
 fleche(ax, (18.05, 11.2), (19.0, 10.6))
 
@@ -121,9 +124,9 @@ fleche(ax, (18.4, 6.6), (19.0, 9.6), couleur=VERT, style="--", courbe=0.15)
 # Gouvernance
 boite(ax, 0.3, 0.6, 22.8, 3.1, "GOUVERNANCE ET SÉCURITÉ (06_GOVERNANCE)",
       ["Propriétaire métier : service HSE.   Propriétaire technique : data engineer (le groupe).",
-       "Classification : sources, RAW, STAGING et CORE confidentiels (worker_id) ; MART et suivi internes ; rapport et dashboard publics (agrégats seulement).",
-       "Accès (moindre privilège) : l'EDA et le dashboard lisent seulement les MART et le suivi. Politique documentée, non appliquée techniquement (SQLite).",
-       "Lineage : 36 liens source vers cible (lineage.csv).   Dictionnaire enrichi : 148 colonnes.   Rafraîchissement : un run complet après chaque livraison de sources."],
+       "Classification : sources, RAW, STAGING et CORE confidentiels (worker_id) ; MART et suivi internes ; rapport et dashboard publics.",
+       "Accès (moindre privilège) : l'EDA et le dashboard lisent seulement les MART et le suivi (politique écrite, non appliquée par SQLite).",
+       "Lineage : 36 liens source vers cible.   Dictionnaire enrichi : 148 colonnes.   Rafraîchissement : un run complet à chaque livraison de sources."],
       fond="#FFFFFF", bord=GRIS, couleur_titre=VIOLET_FONCE, gauche=True)
 
 fig.savefig(DOSSIER_ARCHITECTURE / "architecture_finale.png", dpi=200, bbox_inches="tight", facecolor="white")
@@ -134,13 +137,13 @@ print("Schéma écrit :", DOSSIER_ARCHITECTURE / "architecture_finale.png")
 # ---------------------------------------------------------------------
 # Schéma 2 : schéma en étoile (2 faits, 9 dimensions)
 # ---------------------------------------------------------------------
-fig, ax = plt.subplots(figsize=(11.7, 8.3))
+fig, ax = plt.subplots(figsize=(9.4, 6.5))
 ax.set_xlim(0, 23.4)
 ax.set_ylim(0, 16.6)
 ax.axis("off")
 
 ax.text(0.3, 16.2, "Schéma en étoile du Data Warehouse : 2 tables de faits, 9 dimensions",
-        fontsize=14, fontweight="bold", color=VIOLET_FONCE, va="center")
+        fontsize=12, fontweight="bold", color=VIOLET_FONCE, va="center")
 
 Y_BAS, Y_HAUT = 5.4, 11.4        # bas et haut des deux tables de faits
 
@@ -154,11 +157,11 @@ def borne(valeur):
 boite(ax, 5.2, Y_BAS, 5.0, Y_HAUT - Y_BAS, "fact_incident",
       ["1 ligne = 1 incident", "1 400 lignes", "", "Clés : date_key, hour_key,", "location_key, equipment_key,",
        "worker_key, incident_type_key,", "severity_key", "", "Mesures : incident_count,", "is_serious, is_near_miss,",
-       "severity_weight"], fond=ROSE_PALE, bord=FRAMBOISE, couleur_titre=FRAMBOISE, taille_titre=11, taille_texte=8)
+       "severity_weight"], fond=ROSE_PALE, bord=FRAMBOISE, couleur_titre=FRAMBOISE, taille_titre=9.5, taille_texte=7)
 boite(ax, 16.0, Y_BAS, 5.6, Y_HAUT - Y_BAS, "fact_safety_observation",
       ["1 ligne = 1 observation", "3 500 lignes", "", "Clés : date_key, hour_key,", "location_key,",
        "observation_type_key,", "reporter_role_key", "", "Mesures : observation_count,", "is_unsafe, is_near_miss"],
-      fond=ROSE_PALE, bord=FRAMBOISE, couleur_titre=FRAMBOISE, taille_titre=11, taille_texte=8)
+      fond=ROSE_PALE, bord=FRAMBOISE, couleur_titre=FRAMBOISE, taille_titre=9.5, taille_texte=7)
 
 # Dimensions communes (au centre)
 ax.text(13.1, 15.2, "3 dimensions communes\naux deux faits", ha="center", va="center", fontsize=9,
@@ -189,7 +192,7 @@ fleche(ax, (18.8, Y_BAS), (18.8, 4.2))
 ax.text(0.3, 0.8, "Lecture : chaque flèche part d'une table de faits et pointe vers une dimension qui la décrit "
                   "(clé de substitution entière *_key).\nLes deux faits ne sont jamais joints directement : "
                   "ils se rejoignent seulement par les 3 dimensions communes.",
-        fontsize=8.5, color=GRIS, va="center")
+        fontsize=7.5, color=GRIS, va="center")
 
 fig.savefig(DOSSIER_ETL / "schema_etoile.png", dpi=200, bbox_inches="tight", facecolor="white")
 plt.close(fig)
