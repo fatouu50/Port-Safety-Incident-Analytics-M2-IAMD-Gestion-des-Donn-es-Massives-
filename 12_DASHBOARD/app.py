@@ -20,10 +20,21 @@ LOGO = DOSSIER_DASHBOARD / "assets" / "logo_ud.jpg"
 
 # Si la base n'existe pas (premier lancement, Streamlit Cloud), on la construit avec le pipeline.
 # Ce test doit venir avant sqlite3.connect, qui créerait sinon un fichier vide.
-if not BASE_DWH.exists():
+# Une base ne contenant que le journal d'un échec (sans tables MART) compte comme absente.
+def base_prete():
+    if not BASE_DWH.exists():
+        return False
+    test = sqlite3.connect(f"file:{BASE_DWH.as_posix()}?mode=ro", uri=True)
+    try:
+        return test.execute("SELECT 1 FROM sqlite_master WHERE name = 'mart_kpi_summary'").fetchone() is not None
+    finally:
+        test.close()
+
+
+if not base_prete():
     with st.spinner("Première ouverture : construction du Data Warehouse (environ 2 s)..."):
         resultat = subprocess.run([sys.executable, str(PIPELINE)], capture_output=True, text=True)
-    if resultat.returncode != 0 or not BASE_DWH.exists():
+    if resultat.returncode != 0 or not base_prete():
         st.error("La construction du Data Warehouse a échoué.")
         st.code(resultat.stdout[-1500:] + resultat.stderr[-1500:])
         st.stop()
