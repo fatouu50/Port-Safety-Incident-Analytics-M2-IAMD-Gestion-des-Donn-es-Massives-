@@ -24,7 +24,7 @@ L22,STAGING + CORE,stg_incidents + 7 dimensions,CORE,fact_incident,Les textes so
 L23,STAGING + CORE,stg_safety_observations + 5 dimensions,CORE,fact_safety_observation,Les textes sont remplacés par les clés de substitution; mesures observation_count; is_unsafe; is_near_miss,DQ08,etl_pipeline.py 5.4,implémenté
 L24,CORE,fact_incident + dim_date,MART,mart_incidents_month,Regroupement par mois; jours_couverts et mois_complet (octobre s'arrête au 28),DQ10,etl_pipeline.py 5.5,implémenté
 L25,CORE,fact_incident + dim_severity,MART,mart_severity_distribution,Regroupement par gravité; pourcentage du total,,etl_pipeline.py 5.5,implémenté
-L26,CORE,fact_incident + fact_safety_observation + dim_location,MART,mart_incidents_by_area,Regroupement par zone; pourcentage UNSAFE; score_risque (formule à confirmer),,etl_pipeline.py 5.5,implémenté
+L26,CORE,fact_incident + fact_safety_observation + dim_location,MART,mart_incidents_by_area,Regroupement par zone; pourcentage UNSAFE; score_risque (formule validée par le groupe),,etl_pipeline.py 5.5,implémenté
 L27,CORE,fact_incident + fact_safety_observation + dim_date,MART,mart_near_miss,Near-miss par mois; incidents + observations,,etl_pipeline.py 5.5,implémenté
 L28,CORE,fact_incident + dim_incident_type,MART,mart_recurring_incident_type,Regroupement par type; rang (RANK); pourcentage,,etl_pipeline.py 5.5,implémenté
 L29,CORE,fact_incident + dim_worker,MART,mart_incident_rate_shift_role,Incidents par rôle et équipe divisés par l'effectif; aucun worker_id en sortie,,etl_pipeline.py 5.5,implémenté
@@ -33,5 +33,5 @@ L31,RAW + STAGING + CORE + MART,ensemble des contrôles,SUIVI,dq_results,Une lig
 L32,RAW + STAGING + CORE + MART,run complet,SUIVI,etl_run_log,Une ligne par run : date; durée; volumes; statut SUCCES ou ECHEC; l'historique est conservé entre deux runs,,etl_pipeline.py 5.7 et 5.8,implémenté
 L33,SOURCE,01_DATA_RAW/incidents.csv + safety_observations.csv + 3 référentiels,ARCHIVE,05_HDFS/archive puis HDFS /port_exam/project_11/archive,Partition par année et mois; manifeste (lignes et MD5); copie dans HDFS (réplication 2). L'archive part des CSV sources et non du DWH,,05_HDFS/prepare_archive.py,implémenté
 L34,ARCHIVE,05_HDFS/archive/_manifest/manifest.csv,ARCHIVE,HDFS (vérification),Relecture de chaque fichier dans HDFS; comparaison des lignes et du MD5,,05_HDFS/hdfs_verify.py,implémenté
-L35,MART,mart_* (7 tables),CONSOMMATION,07_EDA (notebook),Lecture des MART uniquement; 6 graphiques interprétés,,phase 8 (Fatouma),prévu
-L36,MART + SUIVI,mart_* + dq_results + etl_run_log,CONSOMMATION,Dashboard,Cartes KPI; graphiques; panneau qualité,,phase 9,prévu
+L35,MART,mart_* (7 tables),CONSOMMATION,07_EDA (notebook),Lecture des MART uniquement; 6 graphiques interprétés,,07_EDA/eda_projet11.ipynb,fait
+L36,MART + SUIVI,mart_* + dq_results + etl_run_log,CONSOMMATION,Dashboard,Cartes KPI; graphiques; panneau qualité,,12_DASHBOARD/app.py,fait
