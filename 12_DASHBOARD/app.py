@@ -1,9 +1,12 @@
 """
 Projet 11 : tableau de bord HSE (Streamlit).
-Lit uniquement les tables MART du DWH (04_ETL/project_11_dwh.db).
+Lit uniquement les tables MART du DWH (04_ETL/project_11_dwh.db), plus le suivi qualité (onglet 5).
+Si la base n'existe pas, elle est construite par 04_ETL/etl_pipeline.py au démarrage.
 Lancement depuis la racine du projet :  streamlit run 12_DASHBOARD/app.py
 """
 import sqlite3
+import subprocess
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -12,7 +15,18 @@ import streamlit as st
 
 DOSSIER_DASHBOARD = Path(__file__).resolve().parent
 BASE_DWH = DOSSIER_DASHBOARD.parent / "04_ETL" / "project_11_dwh.db"
+PIPELINE = DOSSIER_DASHBOARD.parent / "04_ETL" / "etl_pipeline.py"
 LOGO = DOSSIER_DASHBOARD / "assets" / "logo_ud.jpg"
+
+# Si la base n'existe pas (premier lancement, Streamlit Cloud), on la construit avec le pipeline.
+# Ce test doit venir avant sqlite3.connect, qui créerait sinon un fichier vide.
+if not BASE_DWH.exists():
+    with st.spinner("Première ouverture : construction du Data Warehouse (environ 2 s)..."):
+        resultat = subprocess.run([sys.executable, str(PIPELINE)], capture_output=True, text=True)
+    if resultat.returncode != 0 or not BASE_DWH.exists():
+        st.error("La construction du Data Warehouse a échoué.")
+        st.code(resultat.stdout[-1500:] + resultat.stderr[-1500:])
+        st.stop()
 
 con = sqlite3.connect(BASE_DWH)
 
