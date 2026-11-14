@@ -242,3 +242,48 @@ grosse_fleche((18.3, 8.2), (22.0, 6.5), FRAMBOISE, "-", -0.25)
 fig.savefig(DOSSIER_PRESENTATION / "architecture_simplifiee.png", dpi=200, bbox_inches="tight", facecolor=FOND_SLIDE)
 plt.close(fig)
 print("Schéma écrit :", DOSSIER_PRESENTATION / "architecture_simplifiee.png")
+
+
+# ---------------------------------------------------------------------
+# Schéma 4 : schéma en étoile simplifié pour la présentation orale (noms seulement)
+#   -> 09_PRESENTATION/schema_etoile_simplifie.png (n'écrase pas schema_etoile.png du rapport)
+# ---------------------------------------------------------------------
+fig, ax = plt.subplots(figsize=(12.2, 5.3))
+ax.set_xlim(0, 16.6)
+ax.set_ylim(-0.3, 8.4)
+ax.axis("off")
+
+
+def bloc_nom(x, y, l, h, nom, fond_, bord, couleur, taille=14):
+    ax.add_patch(FancyBboxPatch((x, y), l, h, boxstyle="round,pad=0.04,rounding_size=0.25",
+                                facecolor=fond_, edgecolor=bord, linewidth=2, zorder=3))
+    ax.text(x + l / 2, y + h / 2, nom, ha="center", va="center", fontsize=taille, fontweight="bold", color=couleur, zorder=4)
+
+
+def trait(p1, p2, couleur=VIOLET):
+    ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color=couleur, lw=2, zorder=1)
+
+
+X_FI, X_FO, Y_F, L_F, H_F = 3.9, 9.9, 3.4, 2.2, 1.6
+centre_fi = (X_FI, Y_F + H_F / 2)
+centre_fo = (X_FO + L_F, Y_F + H_F / 2)
+# dimensions propres aux incidents (à gauche)
+for i, nom in enumerate(["dim_equipment", "dim_worker", "dim_incident_type", "dim_severity"]):
+    y = 6.9 - i * 2.3
+    trait((3.1, y + 0.6), (X_FI, Y_F + H_F / 2))
+    bloc_nom(0.1, y, 3.0, 1.2, nom, LAVANDE, VIOLET, VIOLET_FONCE)
+# dimensions communes (au milieu, en rose) reliées aux deux faits
+for nom, y in zip(["dim_date", "dim_hour", "dim_location"], [6.9, 3.6, 0.3]):
+    trait((6.8, y + 0.6), (X_FI + L_F, Y_F + H_F / 2))
+    trait((9.2, y + 0.6), (X_FO, Y_F + H_F / 2))
+    bloc_nom(6.8, y, 2.4, 1.2, nom, ROSE, ROSE, VIOLET_FONCE)
+# dimensions propres aux observations (à droite)
+for nom, y in zip(["dim_observation_type", "dim_reporter_role"], [5.6, 1.6]):
+    trait((X_FO + L_F, Y_F + H_F / 2), (12.9, y + 0.6))
+    bloc_nom(12.9, y, 3.6, 1.2, nom, LAVANDE, VIOLET, VIOLET_FONCE, 13)
+bloc_nom(X_FI, Y_F, L_F, H_F, "fact_incident", FRAMBOISE, FRAMBOISE, "#FFFFFF", 15)
+bloc_nom(X_FO, Y_F, L_F, H_F, "fact_safety_\nobservation", FRAMBOISE, FRAMBOISE, "#FFFFFF", 15)
+
+fig.savefig(DOSSIER_PRESENTATION / "schema_etoile_simplifie.png", dpi=200, bbox_inches="tight", facecolor=FOND_SLIDE)
+plt.close(fig)
+print("Schéma écrit :", DOSSIER_PRESENTATION / "schema_etoile_simplifie.png")

@@ -4,6 +4,7 @@ Sortie : 09_PRESENTATION/presentation_projet11.pptx
 Lancement depuis la racine du projet :  python 09_PRESENTATION/construire_presentation.py
 Les chiffres viennent du dépôt (base project_11_dwh.db, kpi_catalog.csv, rapport) ; la liste des vérifications est donnée dans la réponse de livraison.
 """
+import sys
 from pathlib import Path
 
 from lxml import etree
@@ -14,7 +15,7 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 RACINE = Path(__file__).resolve().parent.parent
-SORTIE = RACINE / "09_PRESENTATION" / "presentation_projet11.pptx"
+SORTIE = Path(sys.argv[1]) if len(sys.argv) > 1 else RACINE / "09_PRESENTATION" / "presentation_projet11.pptx"
 
 # Couleurs de la charte du dashboard (12_DASHBOARD/app.py)
 VIOLET_FONCE, VIOLET, ROSE, FRAMBOISE = "4A1D6E", "7B3FA0", "EE82B7", "9E1F5C"
@@ -209,19 +210,23 @@ notes(s, "Durée prévue : 1 minute 30. Qui parle : Mako.\n"
 # ------------------------------------------------------------------ 5. data warehouse
 s = nouvelle()
 titre(s, "Un schéma en étoile : 2 tables de faits, 9 dimensions")
-forme(s, 0.6, 1.55, 7.9, 5.3, BLANC, LAVANDE)
-image(s, "04_ETL/schema_etoile.png", 0.7, 1.75, w=7.7)
-chiffre(s, 8.9, 1.55, 3.83, 1.65, "2", "tables de faits", taille=60)
-chiffre(s, 8.9, 3.4, 3.83, 1.65, "9", "dimensions", taille=60)
-forme(s, 8.9, 5.25, 3.83, 1.6, VIOLET_FONCE)
-texte(s, [[("Grain", {"taille": 18, "couleur": ROSE, "gras": True})], [("1 ligne = 1 événement", {"taille": 24, "gras": True})]],
-      8.9, 5.25, 3.83, 1.6, couleur=BLANC, align=PP_ALIGN.CENTER)
+forme(s, 0.6, 1.55, 8.9, 4.0, FOND, LAVANDE)
+image(s, "09_PRESENTATION/schema_etoile_simplifie.png", 0.75, 1.65, w=8.6)
+chiffre(s, 9.7, 1.55, 3.03, 1.9, "2", "tables de faits", taille=60)
+chiffre(s, 9.7, 3.65, 3.03, 1.9, "9", "dimensions", taille=60)
+forme(s, 0.6, 5.8, 12.13, 1.0, VIOLET_FONCE)
+texte(s, [[("Grain : ", {"taille": 26, "couleur": ROSE, "gras": True}), ("1 ligne = 1 événement", {"taille": 26, "gras": True})]],
+      0.6, 5.8, 12.13, 1.0, couleur=BLANC, align=PP_ALIGN.CENTER)
 etiquette(s, "Mako · 1,5 min")
 notes(s, "Durée prévue : 1 minute 30. Qui parle : Mako.\n"
-         "Nous avons choisi un schéma en étoile, avec deux tables de faits : les incidents et les observations de sécurité. "
-         "Elles sont reliées à neuf dimensions : date, heure, zone, engin, travailleur, type, gravité et deux autres. "
-         "Le grain est le plus fin possible : une ligne par événement. "
-         "Les deux faits se rejoignent seulement par les dimensions communes, la date, l'heure et la zone.")
+         "Nous avons choisi un schéma en étoile, avec deux tables de faits au centre : les incidents et les observations de sécurité. "
+         "Autour d'elles, neuf dimensions. Trois sont communes aux deux faits, en rose : la date, l'heure et la zone. "
+         "Les incidents en ont quatre en propre : l'engin, le travailleur, le type et la gravité ; les observations en ont deux : le type d'observation et le rôle du déclarant. "
+         "Le grain est le plus fin possible : une ligne par événement. Les deux faits ne sont jamais joints directement, ils se rejoignent par les dimensions communes.\n"
+         "Détail si on nous interroge (source : 04_ETL/dwh_conception.md) : fact_incident, 1 400 lignes, clés date, heure, zone, engin, travailleur, type, gravité, "
+         "mesures incident_count, is_serious, is_near_miss, severity_weight. fact_safety_observation, 3 500 lignes, clés date, heure, zone, type d'observation, rôle du déclarant, "
+         "mesures observation_count, is_unsafe, is_near_miss. Dimensions : dim_date 301 jours ; dim_hour 24 heures ; dim_location 25 zones ; dim_equipment 40 engins ; "
+         "dim_worker 350 travailleurs ; dim_incident_type 6 types ; dim_severity 4 niveaux ; dim_observation_type 3 types ; dim_reporter_role 3 rôles.")
 
 # ------------------------------------------------------------------ 6. ETL
 s = nouvelle()
