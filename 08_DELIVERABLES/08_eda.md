@@ -29,9 +29,9 @@ Le tableau 19 résume la série mensuelle. L'écart-type mesure la dispersion au
 
 **Figure 5. Incidents par travailleur, par rôle et par équipe (à droite).** Chaque case est un groupe. Le plus exposé est celui des opérateurs de l'équipe A : 4,84 incidents par travailleur (121 incidents pour 25 personnes). Suivent les conducteurs de l'équipe C (4,79) et les techniciens de l'équipe B (4,50). Le moins exposé est celui des techniciens de l'équipe A (3,21). L'écart reste modéré et les groupes sont petits (21 à 41 personnes) : c'est un signal à vérifier, pas une preuve. *Source : `07_EDA/eda_projet11.ipynb`, graphique 4.*
 
-![Near-miss et incidents graves](../07_EDA/figures/05_nearmiss_vs_graves.png) ![Observations UNSAFE et incidents graves](../07_EDA/figures/06_unsafe_vs_graves.png)
+![Near-miss et incidents graves](images/eda_05_nearmiss_vs_graves.png) ![Observations UNSAFE et incidents graves](../07_EDA/figures/06_unsafe_vs_graves.png)
 
-**Figure 6. Near-miss et incidents graves par mois (à gauche).** On compte 759 near-miss pour 312 incidents graves, soit environ 2,4 near-miss par incident grave. Les near-miss varient peu (62 à 92 par mois). Les incidents graves varient davantage (24 à 47). Le ratio est le plus bas en juillet (1,83) et en mai (1,96). La corrélation entre les deux séries est de +0,59, sur 10 mois seulement. *Source : `07_EDA/eda_projet11.ipynb`, graphique 5.*
+**Figure 6. Near-miss et incidents graves par mois (à gauche).** On compte 759 near-miss pour 312 incidents graves, soit environ 2,4 near-miss par incident grave. Les near-miss varient peu (62 à 92 par mois). Les incidents graves varient davantage (24 à 47). Le ratio est le plus bas en juillet (1,83) et en mai (1,96). La corrélation entre les deux séries est de +0,59, sur 10 mois seulement. *Source : `07_EDA/eda_projet11.ipynb`, graphique 5 ; le ratio (759 ÷ 312 = 2,43), la corrélation et les ratios mensuels sont calculés par le groupe sur la table `mart_near_miss`, car la version actuelle du notebook ne les affiche plus.*
 
 **Figure 7. Part d'observations UNSAFE et incidents graves, par zone (à droite).** Chaque point est une zone. Les points ne s'alignent pas : la corrélation est faible et légèrement négative (−0,14). LOC015, la zone la plus touchée (20 incidents graves), n'a que 28,1 % d'observations `UNSAFE`. LOC006 en a 32,5 % pour seulement 3 incidents graves. *Source : `07_EDA/eda_projet11.ipynb`, graphique 6.*
 
@@ -50,7 +50,7 @@ Lire uniquement les tables MART a deux avantages. L'analyse utilise les mêmes c
 
 ## 8.5 Limites et hypothèses
 
-- **Corrélation n'est pas causalité.** La corrélation de +0,59 repose sur 10 points. Elle reflète surtout le volume d'activité du mois, et non un lien de cause à effet. *Source : notebook, graphique 5.*
+- **Corrélation n'est pas causalité.** La corrélation de +0,59 repose sur 10 points. Elle reflète surtout le volume d'activité du mois, et non un lien de cause à effet. *Source : notebook, graphique 5 ; calcul sur `mart_near_miss`.*
 - **Score de risque.** Les pondérations 50 / 30 / 20 sont un choix du groupe : le sujet ne donne pas de formule. Le score compare les zones entre elles ; ce n'est pas une probabilité. *Source : `10_EXPECTED_KPIS/kpi_catalog.csv`, KPI3.*
 - **Taux par effectif.** Sans heures travaillées, le taux par rôle et par équipe ne mesure pas l'exposition réelle. L'équipe est celle de la fiche du travailleur, et non celle de l'heure de l'incident. *Source : notebook, conclusion ; `kpi_catalog.csv`, KPI6.*
 - **Données synthétiques.** Les tendances illustrent la méthode d'analyse. *Source : sujet, § 2.*

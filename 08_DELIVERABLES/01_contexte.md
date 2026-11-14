@@ -18,7 +18,7 @@ La problématique est donc la suivante : **comment transformer des fichiers d'é
 
 Le sujet impose six indicateurs, appelés KPI (indicateurs clés de performance). Un KPI est un chiffre suivi dans le temps pour décider. Exemple : le nombre d'incidents par mois.
 
-**Tableau 1. Les quatre questions du service HSE et les KPI du sujet**
+**Tableau 1. Les six KPI du sujet, la question du service HSE à laquelle chacun répond et la décision visée**
 
 | Question | KPI demandé par le sujet | Décision visée |
 |---|---|---|
@@ -53,4 +53,4 @@ La chaîne complète tient en une ligne : fichiers CSV → SQL → Data Warehous
 
 - Les données sont synthétiques. Les résultats illustrent la méthode ; ils ne décrivent pas un terminal réel. *Source : sujet, § 2.*
 - Le sujet ne définit ni « incident grave », ni la formule d'un score de risque par zone. Le groupe a posé ses propres définitions, signalées à chaque usage (hypothèses H1 à H4, section 4).
-- La répartition du travail dans le groupe est la suivante : Fatouma Soubere Mahamoud a réalisé le SQL, HDFS et l'analyse exploratoire ; Mako Mohamed Aden a réalisé le Data Warehouse, l'ETL et la gouvernance. Le dashboard a été fait à deux : Fatouma a réalisé les onglets 1 à 4 (évolution mensuelle, zones à risque, rôles et équipes, signaux faibles et types) et Mako l'onglet 5 (qualité des données). *Source : `06_GOVERNANCE/GOVERNANCE_CHECKLIST.md`, § 1.*
+- La répartition du travail dans le groupe est la suivante : Fatouma Soubere Mahamoud a réalisé le SQL, HDFS et l'analyse exploratoire ; Mako Mohamed Aden a réalisé le Data Warehouse, l'ETL et la gouvernance. Le dashboard a été fait à deux, sur une seule page : Fatouma a réalisé la partie du haut (filtres, 8 cartes KPI et 6 graphiques) et Mako la section « Qualité des données » en bas de page. *Source : `06_GOVERNANCE/GOVERNANCE_CHECKLIST.md`, § 1.*

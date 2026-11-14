@@ -10,7 +10,7 @@
 | Clé de substitution | Numéro entier créé par le pipeline pour identifier une ligne d'une dimension. |
 | Clé étrangère | Colonne qui renvoie à une ligne d'une autre table. |
 | Couche | Étape de rangement des données dans le Data Warehouse : RAW, STAGING, CORE, MART. |
-| Dashboard | Tableau de bord interactif qui affiche les indicateurs. |
+| Dashboard | Tableau de bord interactif, ici une page unique qui affiche les indicateurs, les graphiques et l'état de la qualité des données. |
 | Data Warehouse (DWH) | Base de données organisée pour l'analyse. |
 | Dimension | Table qui décrit un axe d'analyse : date, zone, gravité. |
 | DQ (Data Quality) | Qualité des données ; nom de nos 12 règles de contrôle (DQ01 à DQ12). |
@@ -51,7 +51,7 @@
 | Dashboard | `streamlit run 12_DASHBOARD/app.py` | racine du projet |
 | Rapport en PDF | `python 08_DELIVERABLES/assembler_rapport.py` | racine du projet |
 
-Le tableau 24 donne l'ordre à suivre : la base source, le Data Warehouse, puis ce qui en dépend. Les bases SQLite et l'archive ne sont pas enregistrées dans le dépôt : ces commandes les recréent à l'identique. *Source : en-tête de chaque script ; `.gitignore`.*
+Le tableau 24 donne l'ordre à suivre : base source, Data Warehouse, puis ce qui en dépend. Les bases et l'archive ne sont pas dans le dépôt : ces commandes les recréent. *Source : en-tête de chaque script ; `.gitignore`.*
 
 ## Annexe C. Où trouver les livrables dans le dépôt
 
@@ -67,4 +67,4 @@ Le tableau 24 donne l'ordre à suivre : la base source, le Data Warehouse, puis 
 | Dictionnaire de données enrichi | `06_GOVERNANCE/data_dictionary_enrichi.csv` (148 colonnes) |
 | Règles de qualité, lineage, politique d'accès | Dossier `06_GOVERNANCE` |
 
-Le tableau 25 relie chaque livrable du sujet à un fichier. Le dictionnaire enrichi compte 148 lignes : il est fourni sous forme de fichier plutôt qu'imprimé dans ce rapport. *Source : sujet, § 6 ; arborescence du dépôt.*
+Le tableau 25 relie chaque livrable du sujet à un fichier ; le dictionnaire enrichi (148 lignes) est fourni en fichier. *Source : sujet, § 6 ; arborescence du dépôt.*

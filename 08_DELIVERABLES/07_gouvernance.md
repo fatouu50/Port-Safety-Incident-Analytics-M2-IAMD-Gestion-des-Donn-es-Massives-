@@ -84,7 +84,7 @@ Les incidents concernent des personnes. Le service HSE a besoin de savoir quels 
 
 ## 7.4 Résultat
 
-Le suivi se lit à trois endroits : `dq_results` (une ligne par règle et par table), `etl_run_log` (une ligne par run) et `stg_rejects` (les lignes refusées). L'onglet « Qualité des données » du dashboard affiche ces informations : règles OK, rejets, alertes et dernier run. *Source : `06_GOVERNANCE/GOVERNANCE_CHECKLIST.md`, § 7 ; `12_DASHBOARD/app.py`.*
+Le suivi se lit à trois endroits : `dq_results` (une ligne par règle et par table), `etl_run_log` (une ligne par run) et `stg_rejects` (les lignes refusées). La section « Qualité des données » du dashboard, en bas de la page, affiche ces informations : 10 règles sur 12 OK, 0 rejet, 2 alertes (DQ10 et DQ11), le tableau coloré des règles DQ01 à DQ12, le dernier run et l'explication des deux alertes (figure 11, section 10). *Source : `06_GOVERNANCE/GOVERNANCE_CHECKLIST.md`, § 7 ; `12_DASHBOARD/app.py`.*
 
 ## 7.5 Limites et hypothèses
 

@@ -34,7 +34,7 @@ SECTIONS = [
     "12_annexes.md",
 ]
 # Sections qui commencent sur une nouvelle page (les autres s'enchaînent)
-NOUVELLE_PAGE = ["00_resume.md", "01_contexte.md", "12_annexes.md"]
+NOUVELLE_PAGE = ["00_resume.md", "01_contexte.md"]
 
 NAVIGATEURS = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -69,7 +69,7 @@ code { font-family: Consolas, 'Courier New', monospace; font-size: 9pt; color: #
 em.source { font-size: 8.5pt; color: #6B6375; }
 table { border-collapse: collapse; width: 100%; margin: 3px 0 7px 0; font-size: 8.6pt; line-height: 1.25; }
 th { background: #4A1D6E; color: #FFFFFF; text-align: left; padding: 4px 6px; font-weight: 600; }
-td { border-bottom: 1px solid #D9C8EA; padding: 3px 6px; vertical-align: top; }
+td { border-bottom: 1px solid #D9C8EA; padding: 2.4px 6px; vertical-align: top; }
 tr { break-inside: avoid; }
 tr:nth-child(even) td { background: #FAF7FD; }
 td code, th code { font-size: 8.3pt; background: none; padding: 0; }
@@ -84,6 +84,11 @@ div.paysage p.figure { margin: 0 0 4px 0; break-after: avoid; }
 div.paysage h2 { margin: 0 0 4px 0; }
 div.paysage p.figure img { max-width: none; max-height: 15.6cm; width: auto; height: 15.6cm; }
 div.paysage p.legende { margin: 2px 0 0 0; text-align: center; }
+div.paysage.capture p.figure { margin: 0 0 6px 0; }
+div.paysage.capture p.figure img { width: 24.6cm; height: auto; max-height: 11.6cm; object-fit: contain; border: 1px solid #D9C8EA; }
+div.paysage.capture p.legende { margin: 4px 0 6px 0; }
+div.paysage.capture p { font-size: 10.5pt; }
+div.paysage.capture p.legende { font-size: 10pt; }
 p.deux-figures img { width: 49%; max-height: 6.2cm; object-fit: contain; vertical-align: top; }
 span.marqueur { background: #FFE98A; color: #7A4B00; font-weight: 700; padding: 1px 4px; border-radius: 3px; }
 /* Page de garde */
@@ -121,7 +126,7 @@ PAGE_DE_GARDE = f"""
     <b>Fatouma Soubere Mahamoud</b>
   </div>
   <div class="bas">
-    Enseignant : <span class="marqueur">[À COMPLÉTER : nom de l'enseignant]</span><br>
+    Enseignant : Mr. MOHAMED ADEN<br>
     Soutenance du 16 novembre 2026<br>
     Toutes les données sont synthétiques : aucune donnée personnelle réelle n'est utilisée.
   </div>
@@ -143,6 +148,11 @@ def en_html(texte_md):
     html = re.sub(r"<p>(<img [^>]*>)</p>", r'<p class="figure">\1</p>', html)
     # Un schéma seul (avec son titre) est placé sur une page A4 en paysage, pour rester lisible une fois imprimé
     html = re.sub(r'(<p class="figure">(?:(?!</p>).)*</p>\s*<p class="legende">.*?</p>)', r'<div class="paysage">\1</div>', html, flags=re.S)
+    # Une capture du dashboard est aussi sur une page en paysage, avec son titre et le paragraphe qui l'interprète
+    html = re.sub(r'<div class="paysage">(<p class="figure"><img [^>]*images/dashboard_[^>]*></p>\s*<p class="legende">.*?</p>)</div>\s*(<p>.*?</p>)',
+                  r'<div class="paysage capture">\1\2</div>', html, flags=re.S)
+    # Le paragraphe de présentation du dashboard passe en haut de la page de la première capture
+    html = re.sub(r'(<p><strong>Le dashboard\.</strong>.*?</p>)\s*(<div class="paysage capture">)', r'\2\1', html, flags=re.S)
     # Le sous-titre qui précède un schéma pleine page passe sur la page du schéma (sinon il resterait seul en bas de page)
     html = re.sub(r'(<h2>[^<]*</h2>)\s*(<div class="paysage">)', r'\2\1', html)
     # Sources et déductions, en petit
@@ -225,4 +235,4 @@ print(f"PDF écrit : {PDF_FINAL.name}, {total} pages")
 if not 20 <= total <= 30:
     print("ATTENTION : le sujet demande un dossier de 20 à 30 pages.")
 marqueurs = sum(len(re.findall(r"\[À COMPLÉTER", (DOSSIER_RAPPORT / nom).read_text(encoding="utf-8"))) for nom in SECTIONS)
-print(f"Marqueurs [À COMPLÉTER] restants dans les sections : {marqueurs} (plus 1 sur la page de garde)")
+print(f"Marqueurs [À COMPLÉTER] restants dans les sections : {marqueurs}")
