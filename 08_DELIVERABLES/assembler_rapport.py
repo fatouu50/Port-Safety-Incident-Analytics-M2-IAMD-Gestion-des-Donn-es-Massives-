@@ -34,7 +34,7 @@ SECTIONS = [
     "12_annexes.md",
 ]
 # Sections qui commencent sur une nouvelle page (les autres s'enchaînent)
-NOUVELLE_PAGE = ["00_resume.md", "01_contexte.md"]
+NOUVELLE_PAGE = ["01_contexte.md"]
 
 NAVIGATEURS = [
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -75,7 +75,7 @@ tr:nth-child(even) td { background: #FAF7FD; }
 td code, th code { font-size: 8.3pt; background: none; padding: 0; }
 p.legende { margin: 7px 0 3px 0; break-after: avoid; }
 p.legende strong { color: #7B3FA0; }
-table + p.legende, p.figure + p.legende { break-after: auto; }
+table + p.legende, p.figure + p.legende, p.legende.longue { break-after: auto; }
 p.figure { text-align: center; margin: 10px 0 4px 0; break-after: avoid; break-inside: avoid; }
 p.figure img { max-width: 100%; max-height: 10.8cm; }
 /* Schémas pleine page : une page A4 en paysage, image agrandie à la hauteur disponible */
@@ -85,7 +85,7 @@ div.paysage h2 { margin: 0 0 4px 0; }
 div.paysage p.figure img { max-width: none; max-height: 15.6cm; width: auto; height: 15.6cm; }
 div.paysage p.legende { margin: 2px 0 0 0; text-align: center; }
 div.paysage.capture p.figure { margin: 0 0 6px 0; }
-div.paysage.capture p.figure img { width: 24.6cm; height: auto; max-height: 11.6cm; object-fit: contain; border: 1px solid #D9C8EA; }
+div.paysage.capture p.figure img { width: auto; height: auto; max-width: 24.6cm; max-height: 13.2cm; border: 1px solid #D9C8EA; }
 div.paysage.capture p.legende { margin: 4px 0 6px 0; }
 div.paysage.capture p { font-size: 10.5pt; }
 div.paysage.capture p.legende { font-size: 10pt; }
@@ -106,7 +106,7 @@ span.marqueur { background: #FFE98A; color: #7A4B00; font-weight: 700; padding: 
 /* Sommaire */
 .sommaire h1 { break-before: page; margin-top: 0; }
 .sommaire table { font-size: 11pt; line-height: 1.5; }
-.sommaire td { border-bottom: 1px dotted #C9BCD8; padding: 7px 4px; background: none !important; }
+.sommaire td { border-bottom: 1px dotted #C9BCD8; padding: 4.5px 4px; background: none !important; }
 .sommaire td.page { text-align: right; width: 2cm; color: #4A1D6E; font-weight: 600; }
 """
 
@@ -142,7 +142,11 @@ def en_html(texte_md):
     # Marqueurs visibles
     html = re.sub(r"\[À COMPLÉTER : [^\]]*\]", lambda m: f'<span class="marqueur">{m.group(0)}</span>', html)
     # Titres numérotés des tableaux et des figures
-    html = re.sub(r"<p>(<strong>(?:Tableau|Figure) \d+\.)", r'<p class="legende">\1', html)
+    # Un titre court reste collé à ce qui le suit ; un titre suivi de son interprétation (long) peut être coupé en fin de page
+    def classe_legende(m):
+        longueur = len(re.sub(r"<[^>]+>", "", m.group(2)))
+        return f'<p class="legende{" longue" if longueur > 170 else ""}">{m.group(1)}{m.group(2)}</p>'
+    html = re.sub(r"<p>(<strong>(?:Tableau|Figure) \d+\.)(.*?)</p>", classe_legende, html, flags=re.S)
     # Paragraphes d'images : une image seule, ou deux images côte à côte
     html = re.sub(r"<p>(<img [^>]*>\s*<img [^>]*>)</p>", r'<p class="figure deux-figures">\1</p>', html)
     html = re.sub(r"<p>(<img [^>]*>)</p>", r'<p class="figure">\1</p>', html)
