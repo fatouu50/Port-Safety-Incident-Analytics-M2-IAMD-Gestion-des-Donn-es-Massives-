@@ -65,7 +65,10 @@ st.markdown("""
 <style>
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none; }
 .stApp { background: #F7F2FB; }
-.block-container { padding-top: 1.2rem; max-width: 1400px; }
+/* Barre Streamlit du haut (Fork, GitHub, menu) : masquée, car en ligne elle recouvre le haut de la bannière */
+header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stMainMenu"],
+[data-testid="stAppDeployButton"], #MainMenu { display: none !important; }
+.block-container { padding-top: 1.8rem; max-width: 1400px; }
 .bandeau { background: linear-gradient(90deg, #4A1D6E 0%, #7B3FA0 60%, #EE82B7 100%); border-radius: 16px;
            padding: 14px 24px; display: flex; align-items: center; gap: 18px; margin-bottom: 14px; }
 .bandeau img { height: 66px; background: #FFFFFF; border-radius: 10px; padding: 4px; }
