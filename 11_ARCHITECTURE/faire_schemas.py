@@ -56,7 +56,7 @@ def fleche(ax, depart, arrivee, texte="", couleur=VIOLET, style="-", decalage=(0
 # ---------------------------------------------------------------------
 fig, ax = plt.subplots(figsize=(9.4, 6.5))   # taille réelle sur une page A4 paysage (le rapport l'imprime sans l'agrandir)
 ax.set_xlim(0, 23.4)
-ax.set_ylim(0, 16.6)
+ax.set_ylim(1.9, 16.6)
 ax.axis("off")
 
 ax.text(0.3, 16.2, "Architecture finale : des fichiers sources aux décisions du service HSE",
@@ -87,20 +87,20 @@ for x_depart, x_arrivee in [(3.9, 4.9), (7.85, 8.3), (11.25, 11.7), (14.65, 15.1
 # Consommation
 boite(ax, 19.0, 12.5, 4.1, 2.5, "EDA (Python)", ["07_EDA/eda_projet11.ipynb", "6 graphiques interprétés", "lit les MART seulement"],
       fond="#FFFFFF", bord=VIOLET)
-boite(ax, 19.0, 9.2, 4.1, 2.9, "DASHBOARD (Streamlit)", ["12_DASHBOARD/app.py", "8 cartes KPI, 5 onglets", "dont Qualité des données",
-                                                        "lit les MART et le suivi"], fond="#FFFFFF", bord=VIOLET, taille_titre=7.8)
+boite(ax, 19.0, 9.2, 4.1, 2.9, "DASHBOARD", ["Streamlit, une seule page", "12_DASHBOARD/app.py", "8 cartes KPI, 6 graphiques,",
+                                           "section Qualité des données", "lit les MART et le suivi"], fond="#FFFFFF", bord=VIOLET)
 fleche(ax, (18.05, 12.6), (19.0, 13.5))
 fleche(ax, (18.05, 11.2), (19.0, 10.6))
 
 # Décisions HSE
-boite(ax, 19.0, 4.4, 4.1, 4.2, "DÉCISIONS HSE", ["Où : rondes en priorité", "sur LOC015 et LOC014", "Quand : cause du pic de mai",
+boite(ax, 19.0, 4.9, 4.1, 3.7, "DÉCISIONS HSE", ["Où : rondes en priorité", "sur LOC015 et LOC014", "Quand : cause du pic de mai",
                                                 "Qui : briefings opérateurs A", "Gravité : objectif sur les", "incidents graves (22,3 %)",
                                                 "Signaux faibles : near-miss"],
       fond=ROSE_PALE, bord=FRAMBOISE, couleur_titre=FRAMBOISE)
 fleche(ax, (21.05, 9.2), (21.05, 8.6), couleur=FRAMBOISE)
 
 # HDFS
-boite(ax, 0.3, 4.4, 10.0, 3.6, "ARCHIVE HDFS : /port_exam/project_11/archive",
+boite(ax, 0.3, 4.9, 10.0, 3.1, "ARCHIVE HDFS : /port_exam/project_11/archive",
       ["Docker : 1 NameNode + 2 DataNodes (Hadoop 3.3.6), réplication 2",
        "raw/ : incidents et observations, 1 fichier par mois : 20 fichiers",
        "reference/ : zones, travailleurs, engins : 3 fichiers",
@@ -112,17 +112,17 @@ fleche(ax, (2.1, 9.4), (2.1, 8.0), "prepare_archive.py", decalage=(1.6, -0.15), 
 fleche(ax, (16.2, 9.4), (9.4, 8.0), "export_mart_parquet.py", decalage=(2.6, -0.5), couleur=VIOLET_FONCE, style="--")
 
 # Suivi qualité
-boite(ax, 10.75, 4.4, 7.65, 3.3, "QUALITÉ ET SUIVI DU PIPELINE",
+boite(ax, 10.75, 4.9, 7.65, 2.8, "QUALITÉ ET SUIVI DU PIPELINE",
       ["12 règles (DQ01 à DQ12), 39 contrôles : dq_results",
        "etl_run_log : date, durée, volumes, statut du run",
        "stg_rejects : chaque ligne refusée et sa raison",
        "test_etl.py : idempotence, 11 anomalies = 11 rejets,",
        "panne simulée et rollback"],
       fond="#F3FAF6", bord=VERT, couleur_titre=VERT, gauche=True)
-fleche(ax, (18.4, 6.6), (19.0, 9.6), couleur=VERT, style="--", courbe=0.15)
+fleche(ax, (18.4, 6.8), (19.0, 9.6), couleur=VERT, style="--", courbe=0.15)
 
 # Gouvernance
-boite(ax, 0.3, 0.6, 22.8, 3.1, "GOUVERNANCE ET SÉCURITÉ (06_GOVERNANCE)",
+boite(ax, 0.3, 2.1, 22.8, 2.3, "GOUVERNANCE ET SÉCURITÉ (06_GOVERNANCE)",
       ["Propriétaire métier : service HSE.   Propriétaire technique : data engineer (le groupe).",
        "Classification : sources, RAW, STAGING et CORE confidentiels (worker_id) ; MART et suivi internes ; rapport et dashboard publics.",
        "Accès (moindre privilège) : l'EDA et le dashboard lisent seulement les MART et le suivi (politique écrite, non appliquée par SQLite).",
