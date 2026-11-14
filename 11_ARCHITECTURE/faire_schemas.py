@@ -197,3 +197,48 @@ ax.text(0.3, 0.8, "Lecture : chaque flèche part d'une table de faits et pointe 
 fig.savefig(DOSSIER_ETL / "schema_etoile.png", dpi=200, bbox_inches="tight", facecolor="white")
 plt.close(fig)
 print("Schéma écrit :", DOSSIER_ETL / "schema_etoile.png")
+
+
+# ---------------------------------------------------------------------
+# Schéma 3 : architecture simplifiée pour la présentation orale (6 blocs)
+#   -> 09_PRESENTATION/architecture_simplifiee.png (n'écrase pas architecture_finale.png du rapport)
+# ---------------------------------------------------------------------
+DOSSIER_PRESENTATION = DOSSIER_ARCHITECTURE.parent / "09_PRESENTATION"
+FOND_SLIDE = "#F7F2FB"
+
+fig, ax = plt.subplots(figsize=(12.2, 5.0))
+ax.set_xlim(0, 24.4)
+ax.set_ylim(0, 10)
+ax.axis("off")
+
+
+def gros_bloc(x, y, l, h, titre, mot, fond, bord, couleur_texte="#FFFFFF", couleur_mot="#FFFFFF"):
+    ax.add_patch(FancyBboxPatch((x, y), l, h, boxstyle="round,pad=0.05,rounding_size=0.5",
+                                facecolor=fond, edgecolor=bord, linewidth=2))
+    ax.text(x + l / 2, y + h * 0.60, titre, ha="center", va="center", fontsize=17, fontweight="bold", color=couleur_texte)
+    ax.text(x + l / 2, y + h * 0.27, mot, ha="center", va="center", fontsize=14, color=couleur_mot)
+
+
+def grosse_fleche(depart, arrivee, couleur=VIOLET_FONCE, style="-", courbe=0.0):
+    ax.annotate("", xy=arrivee, xytext=depart,
+                arrowprops=dict(arrowstyle="simple,head_width=1.1,head_length=1.0,tail_width=0.45", color=couleur,
+                                linestyle=style, connectionstyle=f"arc3,rad={courbe}", shrinkA=3, shrinkB=3))
+
+
+gros_bloc(0.2, 3.6, 4.2, 2.8, "Sources", "5 fichiers CSV", "#FFFFFF", GRIS, VIOLET_FONCE, GRIS)
+gros_bloc(6.0, 3.6, 5.8, 2.8, "Data Warehouse", "4 couches", VIOLET_FONCE, VIOLET_FONCE)
+gros_bloc(6.0, 0.1, 5.8, 2.2, "Archive HDFS", "historique brut", VIOLET, VIOLET)
+gros_bloc(13.4, 6.9, 4.8, 2.8, "EDA", "6 graphiques", ROSE, ROSE, VIOLET_FONCE, VIOLET_FONCE)
+gros_bloc(13.4, 3.6, 4.8, 2.8, "Dashboard", "en ligne", VIOLET, VIOLET)
+gros_bloc(19.8, 3.6, 4.4, 2.8, "Décisions HSE", "agir", FRAMBOISE, FRAMBOISE)
+
+grosse_fleche((4.5, 5.0), (5.9, 5.0))
+grosse_fleche((2.3, 3.5), (5.9, 1.4), VIOLET, "-", 0.25)
+grosse_fleche((11.9, 6.0), (13.3, 8.0), ROSE, "-", -0.1)
+grosse_fleche((11.9, 5.0), (13.3, 5.0))
+grosse_fleche((18.3, 5.0), (19.7, 5.0), FRAMBOISE)
+grosse_fleche((18.3, 8.2), (22.0, 6.5), FRAMBOISE, "-", -0.25)
+
+fig.savefig(DOSSIER_PRESENTATION / "architecture_simplifiee.png", dpi=200, bbox_inches="tight", facecolor=FOND_SLIDE)
+plt.close(fig)
+print("Schéma écrit :", DOSSIER_PRESENTATION / "architecture_simplifiee.png")
