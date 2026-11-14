@@ -118,7 +118,7 @@ st.markdown(f"""
 <img src="data:image/jpeg;base64,{logo_base64}">
 <div>
 <h1>SÉCURITÉ PORTUAIRE : TABLEAU DE BORD HSE</h1>
-<p>Université de Djibouti · Master II Artificial Intelligence &amp; Data Science · Gestion des Données Massives</p>
+<p>Université de Djibouti · Master 2 IAMD · Gestion des Données Massives</p>
 <p>Projet 11 : Port Safety &amp; Incident Analytics · Mako Mohamed Aden, Fatouma Soubere Mahamoud · données du 1er janvier au 28 octobre 2026</p>
 </div>
 </div>
@@ -353,7 +353,9 @@ def colorier(statut):
 
 tableau_regles = regles[["regle", "tables", "echecs", "statut", "detail"]]
 tableau_regles.columns = ["Règle", "Tables contrôlées", "Échecs", "Statut", "Détail"]
-st.dataframe(tableau_regles.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch")
+# Hauteur fixée pour afficher les 12 lignes sans barre de défilement (35 px par ligne, plus l'en-tête)
+st.dataframe(tableau_regles.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch",
+             height=35 * (len(tableau_regles) + 1) + 3)
 
 with st.expander("Voir les contrôles ligne par ligne"):
     tableau_dq = dq[["regle", "table_name", "nb_controles", "nb_echecs", "statut", "detail"]]
