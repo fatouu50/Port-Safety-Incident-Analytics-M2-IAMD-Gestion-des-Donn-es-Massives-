@@ -92,8 +92,10 @@ def texte(shape_or_slide, paragraphes, x=None, y=None, w=None, h=None, taille=20
     return cible
 
 
-def titre(slide, t, couleur=VIOLET_FONCE):
-    texte(slide, t, 0.6, 0.35, 12.13, 1.0, taille=34, couleur=couleur, gras=True)
+def titre(slide, grand, sous, couleur=VIOLET_FONCE, couleur_sous=ROSE):
+    """Titre de la trame du professeur (grand) et phrase-message (sous-titre, plus petit, en rose)."""
+    texte(slide, grand, 0.6, 0.18, 12.13, 0.62, taille=32, couleur=couleur, gras=True)
+    texte(slide, sous, 0.6, 0.78, 12.13, 0.45, taille=22, couleur=couleur_sous, gras=True)
 
 
 def fleche(slide, x, y, w, h, couleur=VIOLET_FONCE, type_=MSO_SHAPE.RIGHT_ARROW):
@@ -155,7 +157,7 @@ notes(s, "Mako, 0,5 min.\n"
 
 # ------------------------------------------------------------------ 2. problématique (Fatouma, 1 min)
 s = nouvelle()
-titre(s, "Le service HSE a des fichiers, pas encore de réponses")
+titre(s, "Problématique métier", "Le service HSE a des fichiers, pas encore de réponses")
 noms = ["incidents.csv", "safety_observations.csv", "locations.csv", "workers_synthetic.csv", "equipment.csv"]
 for i, n in enumerate(noms):
     y = 1.75 + i * 0.98
@@ -173,7 +175,7 @@ notes(s, "Fatouma, 1 min.\n"
 
 # ------------------------------------------------------------------ 3. données et 5V (Fatouma, 1 min)
 s = nouvelle()
-titre(s, "5 315 lignes : un petit jeu d'enseignement, assumé")
+titre(s, "Données et 5V", "5 315 lignes : un petit jeu d'enseignement, assumé")
 forme(s, 0.6, 1.5, 12.13, 1.65, VIOLET_FONCE)
 texte(s, [[("5 315", {"taille": 80, "gras": True})]], 0.8, 1.5, 3.8, 1.65, couleur=BLANC)
 texte(s, [[("lignes, 260,5 ko", {"taille": 28, "gras": True, "couleur": ROSE})],
@@ -193,7 +195,7 @@ notes(s, "Fatouma, 1 min.\n"
 
 # ------------------------------------------------------------------ 4. architecture (Mako, 1,5 min)
 s = nouvelle()
-titre(s, "Des fichiers CSV aux décisions HSE, en six blocs")
+titre(s, "Architecture générale", "Des fichiers CSV aux décisions HSE, en six blocs")
 image(s, "09_PRESENTATION/architecture_simplifiee.png", 0.5, 1.6, w=12.33)
 notes(s, "Mako, 1,5 min.\n"
          "Voici toute la chaîne en six blocs. Les cinq fichiers CSV alimentent le Data Warehouse, qui compte quatre couches. "
@@ -203,7 +205,7 @@ notes(s, "Mako, 1,5 min.\n"
 
 # ------------------------------------------------------------------ 5. SQL / modèle source (Fatouma, 1,5 min)
 s = nouvelle()
-titre(s, "Cinq tables reliées par des clés, interrogées en SQL")
+titre(s, "SQL et modèle source", "Cinq tables reliées par des clés, interrogées en SQL")
 
 
 def table_sql(x, y, w, h, nom, cle, fk=None):
@@ -240,7 +242,7 @@ notes(s, "Fatouma, 1,5 min.\n"
 
 # ------------------------------------------------------------------ 6. Data Warehouse (Mako, 1,5 min)
 s = nouvelle()
-titre(s, "Un schéma en étoile : 2 tables de faits, 9 dimensions")
+titre(s, "Data Warehouse", "Un schéma en étoile : 2 tables de faits, 9 dimensions")
 forme(s, 0.6, 1.55, 8.9, 4.0, FOND, LAVANDE)
 image(s, "09_PRESENTATION/schema_etoile_simplifie.png", 0.75, 1.65, w=8.6)
 chiffre(s, 9.7, 1.55, 3.03, 1.9, "2", "tables de faits", taille=60)
@@ -260,7 +262,7 @@ notes(s, "Mako, 1,5 min.\n"
 
 # ------------------------------------------------------------------ 7. ETL et qualité (Mako, 3 min)
 s = nouvelle()
-titre(s, "Chaque ligne rejetée est tracée")
+titre(s, "ETL et qualité des données", "Chaque ligne rejetée est tracée")
 couches = [("RAW", "5 315 lignes", VIOLET_FONCE, BLANC), ("STAGING", "5 315 propres", VIOLET, BLANC),
            ("CORE", "4 900 faits", VIOLET_CLAIR, BLANC), ("MART", "75 lignes", ROSE, VIOLET_FONCE)]
 for i, (nom, v, c, ct) in enumerate(couches):
@@ -300,7 +302,7 @@ notes(s, "Mako, 3 min.\n"
 
 # ------------------------------------------------------------------ 8. HDFS (Fatouma, 1,5 min)
 s = nouvelle()
-titre(s, "L'archive HDFS garde l'historique brut en deux exemplaires")
+titre(s, "Archivage HDFS", "L'archive HDFS garde l'historique brut en deux exemplaires")
 chiffre(s, 0.6, 1.55, 3.4, 1.7, "23", "fichiers archivés", taille=60)
 chiffre(s, 0.6, 3.45, 3.4, 1.7, "2", "copies de chaque fichier", taille=60)
 forme(s, 4.25, 1.55, 8.48, 3.6, LAVANDE, VIOLET, pointille=True)
@@ -329,7 +331,7 @@ notes(s, "Fatouma, 1,5 min.\n"
 
 # ------------------------------------------------------------------ 9. KPI et EDA (Fatouma, 2 min)
 s = nouvelle()
-titre(s, "Plus d'un incident sur cinq est grave")
+titre(s, "KPI et analyse exploratoire", "Plus d'un incident sur cinq est grave")
 hauteur = 2.2
 x = 0.6
 for chemin, w in [("07_EDA/figures/01_tendance_mensuelle.png", 4.89), ("07_EDA/figures/03_zones_risque.png", 3.52), ("07_EDA/figures/02_gravite.png", 3.42)]:
@@ -350,7 +352,7 @@ notes(s, "Fatouma, 2 min.\n"
 
 # ------------------------------------------------------------------ 10. gouvernance (Mako, 1,5 min)
 s = nouvelle()
-titre(s, "Le worker_id ne quitte jamais la couche confidentielle")
+titre(s, "Gouvernance, sécurité et lineage", "Le worker_id ne quitte jamais la couche confidentielle")
 niveaux = [("Confidentiel", "RAW · STAGING · CORE", "contiennent worker_id", FRAMBOISE, BLANC),
            ("Interne", "MART et suivi", "agrégats, 0 worker_id", VIOLET, BLANC),
            ("Public", "rapport, présentation", "agrégats seulement", ROSE, VIOLET_FONCE)]
@@ -375,7 +377,7 @@ notes(s, "Mako, 1,5 min.\n"
 
 # ------------------------------------------------------------------ 11. démonstration (Fatouma 1 min puis Mako 1 min)
 s = nouvelle()
-titre(s, "Le dashboard est en ligne : démonstration en deux minutes")
+titre(s, "Démonstration technique", "Le dashboard est en ligne : démonstration en deux minutes")
 forme(s, 0.55, 1.5, 7.2, 3.45, BLANC, LAVANDE)
 image(s, "08_DELIVERABLES/images/dashboard_haut.png", 0.65, 1.6, h=3.25)
 forme(s, 8.0, 1.5, 4.78, 3.45, BLANC, LAVANDE)
@@ -398,7 +400,7 @@ notes(s, "Fatouma 1 min, puis Mako 1 min (2 min en tout).\n"
 
 # ------------------------------------------------------------------ 12. conclusion (Fatouma 1 min puis Mako 0,5 min)
 s = nouvelle(VIOLET_FONCE)
-titre(s, "Cinq actions pour le service HSE, et des limites assumées", BLANC)
+titre(s, "Conclusion et recommandations", "Cinq actions pour le service HSE, et des limites assumées", BLANC, ROSE)
 actions = [("OÙ", "Rondes renforcées sur LOC015 et LOC014"), ("QUAND", "Chercher la cause du pic de mai"),
            ("QUI", "Briefings pour les opérateurs de l'équipe A"), ("GRAVITÉ", "Réduire la part de 22,3 % d'incidents graves"),
            ("SIGNAUX FAIBLES", "Encourager la déclaration des near-miss")]
@@ -425,6 +427,13 @@ NS = "http://schemas.openxmlformats.org/presentationml/2006/main"
 for sl in prs.slides:
     el = etree.SubElement(sl._element, f"{{{NS}}}transition", spd="med")
     etree.SubElement(el, f"{{{NS}}}fade")
+
+# numéros de slide : petits, discrets, en bas à droite (slides 2 à 12)
+n_total = len(prs.slides)
+for k, sl in enumerate(prs.slides, 1):
+    if k >= 2:
+        sombre = (k == n_total)
+        texte(sl, f"{k} / {n_total}", 11.73, 7.08, 1.0, 0.3, taille=12, couleur="D9C8EA" if sombre else GRIS, align=PP_ALIGN.RIGHT)
 
 prs.save(SORTIE)
 print("Présentation écrite :", SORTIE)
