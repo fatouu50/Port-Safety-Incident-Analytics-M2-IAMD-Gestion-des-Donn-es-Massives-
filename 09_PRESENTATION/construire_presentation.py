@@ -224,18 +224,18 @@ table_sql(4.4, 1.5, 3.0, 1.05, "equipment", "equipment_id")
 table_sql(9.2, 1.5, 3.0, 1.05, "locations", "location_id")
 table_sql(2.4, 3.5, 4.4, 1.5, "incidents", "incident_id", "liens : zone, engin, travailleur")
 table_sql(8.7, 3.5, 4.0, 1.5, "safety_observations", "observation_id", "lien : zone")
-tags = [("Jointures", "1 400 lignes avant et après (Q02 bis)"), ("Agrégations", "144,0 incidents par mois (Q05 bis)"),
-        ("CTE", "WITH mensuel AS … LAG() : mai +29,5 % (Q11)"), ("KPI", "22,3 % d'incidents graves (Q06)")]
+tags = [("Jointures", ["1 400 lignes avant et après : aucun doublon"]), ("Agrégations", ["144,0 incidents par mois"]),
+        ("CTE", ["WITH mensuel AS … LAG()", "mai +29,5 %"]), ("KPI", ["22,3 % d'incidents graves"])]
 for i, (t, d) in enumerate(tags):
     x = 0.6 + i * 3.06
     forme(s, x, 5.3, 2.9, 1.65, VIOLET_FONCE if i % 2 == 0 else VIOLET)
-    texte(s, [[(t, {"taille": 26, "gras": True, "couleur": ROSE})], [(d, {"taille": 18})]], x, 5.3, 2.9, 1.65, couleur=BLANC, align=PP_ALIGN.CENTER)
+    texte(s, [[(t, {"taille": 26, "gras": True, "couleur": ROSE})]] + [[(ligne_, {"taille": 18})] for ligne_ in d], x, 5.3, 2.9, 1.65, couleur=BLANC, align=PP_ALIGN.CENTER)
 notes(s, "Fatouma, 1,5 min.\n"
          "Avant le Data Warehouse, nous avons chargé les cinq fichiers dans une base relationnelle SQLite. Chaque table a une clé primaire, et les incidents sont reliés aux zones, aux engins et aux travailleurs par des clés étrangères ; les observations sont reliées aux zones. "
          "La base refuse toute ligne qui enfreint ces règles : au chargement, les 5 315 lignes sont acceptées. "
-         "Nous avons écrit 15 requêtes, qui couvrent les quatre techniques du sujet. Les jointures : la requête Q02 bis vérifie qu'une jointure ne multiplie pas les lignes, 1 400 avant et après. "
-         "Les agrégations : 144,0 incidents par mois complet. Les CTE : la requête Q11 compare chaque mois au précédent avec la fonction LAG, et trouve +29,5 % en mai. "
-         "Enfin, le KPI de gravité : 22,3 % d'incidents graves. Ces chiffres sont ensuite retrouvés à l'identique dans le Data Warehouse, c'est une vérification croisée.\n"
+         "Nous avons écrit 15 requêtes, qui couvrent les quatre techniques du sujet. Les jointures (requête Q02 bis) : on vérifie qu'une jointure ne multiplie pas les lignes, 1 400 avant et après, donc aucun doublon. "
+         "Les agrégations (requête Q05 bis) : 144,0 incidents par mois complet. Les CTE (requête Q11) : on compare chaque mois au précédent avec la fonction LAG, et on trouve +29,5 % en mai. "
+         "Enfin, le KPI de gravité (requête Q06) : 22,3 % d'incidents graves. Ces chiffres sont ensuite retrouvés à l'identique dans le Data Warehouse, c'est une vérification croisée.\n"
          "Source : 03_SQL/schema_sources.sql, 03_SQL/starter_queries.sql, section 3 du rapport.")
 
 # ------------------------------------------------------------------ 6. Data Warehouse (Mako, 1,5 min)
