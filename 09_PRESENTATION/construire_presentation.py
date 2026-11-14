@@ -92,7 +92,7 @@ def texte(shape_or_slide, paragraphes, x=None, y=None, w=None, h=None, taille=20
     return cible
 
 
-def titre(slide, grand, sous, couleur=VIOLET_FONCE, couleur_sous=ROSE):
+def titre(slide, grand, sous, couleur=VIOLET_FONCE, couleur_sous=FRAMBOISE):
     """Titre de la trame du professeur (grand) et phrase-message (sous-titre, plus petit, en rose)."""
     texte(slide, grand, 0.6, 0.18, 12.13, 0.62, taille=32, couleur=couleur, gras=True)
     texte(slide, sous, 0.6, 0.78, 12.13, 0.45, taille=22, couleur=couleur_sous, gras=True)
