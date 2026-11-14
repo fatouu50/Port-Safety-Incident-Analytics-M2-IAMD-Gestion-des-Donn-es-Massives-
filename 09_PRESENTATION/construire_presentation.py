@@ -1,5 +1,5 @@
 """
-Projet 11 : construit la présentation de soutenance (12 slides) avec python-pptx.
+Projet 11 : construit la présentation de soutenance (12 slides, trame du professeur) avec python-pptx.
 Sortie : 09_PRESENTATION/presentation_projet11.pptx
 Lancement depuis la racine du projet :  python 09_PRESENTATION/construire_presentation.py
 Les chiffres viennent du dépôt (base project_11_dwh.db, kpi_catalog.csv, rapport) ; la liste des vérifications est donnée dans la réponse de livraison.
@@ -96,10 +96,6 @@ def titre(slide, t, couleur=VIOLET_FONCE):
     texte(slide, t, 0.6, 0.35, 12.13, 1.0, taille=34, couleur=couleur, gras=True)
 
 
-def etiquette(slide, nom, couleur=GRIS):
-    texte(slide, nom, 0.6, 7.0, 4, 0.3, taille=12, couleur=couleur)
-
-
 def fleche(slide, x, y, w, h, couleur=VIOLET_FONCE, type_=MSO_SHAPE.RIGHT_ARROW):
     return forme(slide, x, y, w, h, couleur, type_=type_)
 
@@ -139,7 +135,7 @@ def nouvelle(couleur_fond=FOND):
     return s
 
 
-# ------------------------------------------------------------------ 1. titre
+# ------------------------------------------------------------------ 1. titre (Mako, 0,5 min)
 s = nouvelle(VIOLET_FONCE)
 forme(s, 0.8, 0.8, 1.5, 1.5, BLANC, type_=MSO_SHAPE.ROUNDED_RECTANGLE)
 image(s, "12_DASHBOARD/assets/logo_ud.jpg", 0.9, 0.9, w=1.3)
@@ -151,12 +147,13 @@ forme(s, 0.8, 5.0, 11.7, 1.55, "5E2A85", type_=MSO_SHAPE.ROUNDED_RECTANGLE)
 texte(s, [[("Mako Mohamed Aden  et  Fatouma Soubere Mahamoud", {"gras": True, "taille": 26})],
           [("Enseignant : Mr. MOHAMED ADEN  ·  Soutenance du 16 novembre 2026", {"taille": 20, "couleur": "D9C8EA"})]],
       1.1, 5.05, 11.2, 1.45, couleur=BLANC)
-notes(s, "Durée prévue : 30 secondes. Qui parle : Mako.\n"
+notes(s, "Mako, 0,5 min.\n"
          "Bonjour, nous présentons le projet 11, Port Safety & Incident Analytics, réalisé avec Fatouma en Master 2 IAMD. "
-         "Je m'appelle Mako et je vais présenter le Data Warehouse, l'ETL et la gouvernance ; Fatouma présentera HDFS et l'analyse. "
-         "Nous vous montrerons aussi le dashboard en ligne.")
+         "Je présente l'architecture, le Data Warehouse, l'ETL avec la qualité des données, et la gouvernance. Fatouma présente le contexte, les données, le SQL, HDFS et l'analyse. "
+         "Nous vous montrerons aussi le dashboard en ligne.\n"
+         "Répartition du temps : Mako environ 9,5 minutes, Fatouma environ 9 minutes, soit 18,5 minutes en tout, puis 5 minutes de questions.")
 
-# ------------------------------------------------------------------ 2. contexte
+# ------------------------------------------------------------------ 2. problématique (Fatouma, 1 min)
 s = nouvelle()
 titre(s, "Le service HSE a des fichiers, pas encore de réponses")
 noms = ["incidents.csv", "safety_observations.csv", "locations.csv", "workers_synthetic.csv", "equipment.csv"]
@@ -169,13 +166,12 @@ fleche(s, 5.15, 3.75, 0.9, 0.7, ROSE)
 forme(s, 6.3, 1.75, 6.43, 4.8, VIOLET_FONCE)
 texte(s, [[("Où, quand, comment et à qui arrivent les incidents ?", {"taille": 36, "gras": True})]], 6.6, 2.0, 5.85, 3.2, couleur=BLANC)
 texte(s, "Service HSE : Hygiène, Sécurité, Environnement", 6.6, 5.3, 5.85, 0.9, taille=20, couleur=ROSE)
-etiquette(s, "Mako · 1 min")
-notes(s, "Durée prévue : 1 minute. Qui parle : Mako.\n"
+notes(s, "Fatouma, 1 min.\n"
          "Le service HSE est chargé de la sécurité des personnes sur un terminal portuaire. Il dispose de cinq fichiers CSV : deux listent des événements, "
          "les incidents et les observations, et trois décrivent le site, les zones, les travailleurs et les engins. "
          "Tels quels, ils ne répondent à rien. Notre question est donc : où, quand, comment et à qui arrivent les incidents ?")
 
-# ------------------------------------------------------------------ 3. données et 5V
+# ------------------------------------------------------------------ 3. données et 5V (Fatouma, 1 min)
 s = nouvelle()
 titre(s, "5 315 lignes : un petit jeu d'enseignement, assumé")
 forme(s, 0.6, 1.5, 12.13, 1.65, VIOLET_FONCE)
@@ -189,25 +185,60 @@ cinq_v = [("Volume", "faible"), ("Vélocité", "par lot (hypothèse)"), ("Varié
 for i, (v, t) in enumerate(cinq_v):
     forme(s, 0.6 + i * 2.5, 5.5, 2.3, 1.3, LAVANDE)
     texte(s, [[(v, {"gras": True, "couleur": VIOLET_FONCE, "taille": 20})], [(t, {"taille": 18, "couleur": TEXTE})]], 0.6 + i * 2.5, 5.5, 2.3, 1.3, align=PP_ALIGN.CENTER)
-etiquette(s, "Fatouma · 1 min")
-notes(s, "Durée prévue : 1 minute. Qui parle : Fatouma.\n"
+notes(s, "Fatouma, 1 min.\n"
          "Nos données comptent 5 315 lignes : 1 400 incidents, 3 500 observations, 25 zones, 350 travailleurs et 40 engins. "
          "Soyons francs : le volume est petit, 260 kilo-octets, c'est un jeu d'enseignement et non du vrai Big Data. "
-         "Nous appliquons donc les méthodes du cours avec une architecture pensée pour un historique qui grandit. "
+         "Nous appliquons donc les méthodes du cours, avec une architecture pensée pour un historique qui grandit. "
          "Sur les 5V, la vélocité est une hypothèse de notre part : le jeu est statique, nous traitons par lot.")
 
-# ------------------------------------------------------------------ 4. architecture
+# ------------------------------------------------------------------ 4. architecture (Mako, 1,5 min)
 s = nouvelle()
 titre(s, "Des fichiers CSV aux décisions HSE, en six blocs")
 image(s, "09_PRESENTATION/architecture_simplifiee.png", 0.5, 1.6, w=12.33)
-etiquette(s, "Mako · 1,5 min")
-notes(s, "Durée prévue : 1 minute 30. Qui parle : Mako.\n"
+notes(s, "Mako, 1,5 min.\n"
          "Voici toute la chaîne en six blocs. Les cinq fichiers CSV alimentent le Data Warehouse, qui compte quatre couches. "
          "Les mêmes sources sont aussi archivées dans HDFS pour garder l'historique brut. "
          "À partir du Data Warehouse, on fait deux choses : l'analyse exploratoire en Python et le dashboard en ligne. "
-         "Tout cela sert un seul but : les décisions du service HSE.")
+         "Tout cela sert un seul but : les décisions du service HSE. Je vais détailler le Data Warehouse, l'ETL et la gouvernance ; Fatouma détaillera le SQL, HDFS et l'analyse.")
 
-# ------------------------------------------------------------------ 5. data warehouse
+# ------------------------------------------------------------------ 5. SQL / modèle source (Fatouma, 1,5 min)
+s = nouvelle()
+titre(s, "Cinq tables reliées par des clés, interrogées en SQL")
+
+
+def table_sql(x, y, w, h, nom, cle, fk=None):
+    forme(s, x, y, w, h, BLANC, VIOLET, epaisseur=2)
+    paras = [[(nom, {"taille": 20, "gras": True, "couleur": VIOLET_FONCE})], [("clé : " + cle, {"taille": 18, "couleur": GRIS})]]
+    if fk:
+        paras.append([(fk, {"taille": 18, "couleur": FRAMBOISE, "gras": True})])
+    texte(s, paras, x, y, w, h, align=PP_ALIGN.CENTER)
+
+
+# liens d'abord (les tables passent au-dessus)
+ligne(s, 4.0, 3.55, 2.1, 2.55)      # incidents -> workers_synthetic
+ligne(s, 5.3, 3.55, 5.9, 2.55)      # incidents -> equipment
+ligne(s, 6.6, 3.55, 9.4, 2.55)      # incidents -> locations
+ligne(s, 10.9, 3.55, 10.9, 2.55)    # safety_observations -> locations
+table_sql(0.6, 1.5, 3.2, 1.05, "workers_synthetic", "worker_id")
+table_sql(4.4, 1.5, 3.0, 1.05, "equipment", "equipment_id")
+table_sql(9.2, 1.5, 3.0, 1.05, "locations", "location_id")
+table_sql(2.4, 3.5, 4.4, 1.5, "incidents", "incident_id", "liens : zone, engin, travailleur")
+table_sql(8.7, 3.5, 4.0, 1.5, "safety_observations", "observation_id", "lien : zone")
+tags = [("Jointures", "1 400 lignes avant et après (Q02 bis)"), ("Agrégations", "144,0 incidents par mois (Q05 bis)"),
+        ("CTE", "WITH mensuel AS … LAG() : mai +29,5 % (Q11)"), ("KPI", "22,3 % d'incidents graves (Q06)")]
+for i, (t, d) in enumerate(tags):
+    x = 0.6 + i * 3.06
+    forme(s, x, 5.3, 2.9, 1.65, VIOLET_FONCE if i % 2 == 0 else VIOLET)
+    texte(s, [[(t, {"taille": 26, "gras": True, "couleur": ROSE})], [(d, {"taille": 18})]], x, 5.3, 2.9, 1.65, couleur=BLANC, align=PP_ALIGN.CENTER)
+notes(s, "Fatouma, 1,5 min.\n"
+         "Avant le Data Warehouse, nous avons chargé les cinq fichiers dans une base relationnelle SQLite. Chaque table a une clé primaire, et les incidents sont reliés aux zones, aux engins et aux travailleurs par des clés étrangères ; les observations sont reliées aux zones. "
+         "La base refuse toute ligne qui enfreint ces règles : au chargement, les 5 315 lignes sont acceptées. "
+         "Nous avons écrit 15 requêtes, qui couvrent les quatre techniques du sujet. Les jointures : la requête Q02 bis vérifie qu'une jointure ne multiplie pas les lignes, 1 400 avant et après. "
+         "Les agrégations : 144,0 incidents par mois complet. Les CTE : la requête Q11 compare chaque mois au précédent avec la fonction LAG, et trouve +29,5 % en mai. "
+         "Enfin, le KPI de gravité : 22,3 % d'incidents graves. Ces chiffres sont ensuite retrouvés à l'identique dans le Data Warehouse, c'est une vérification croisée.\n"
+         "Source : 03_SQL/schema_sources.sql, 03_SQL/starter_queries.sql, section 3 du rapport.")
+
+# ------------------------------------------------------------------ 6. Data Warehouse (Mako, 1,5 min)
 s = nouvelle()
 titre(s, "Un schéma en étoile : 2 tables de faits, 9 dimensions")
 forme(s, 0.6, 1.55, 8.9, 4.0, FOND, LAVANDE)
@@ -217,8 +248,7 @@ chiffre(s, 9.7, 3.65, 3.03, 1.9, "9", "dimensions", taille=60)
 forme(s, 0.6, 5.8, 12.13, 1.0, VIOLET_FONCE)
 texte(s, [[("Grain : ", {"taille": 26, "couleur": ROSE, "gras": True}), ("1 ligne = 1 événement", {"taille": 26, "gras": True})]],
       0.6, 5.8, 12.13, 1.0, couleur=BLANC, align=PP_ALIGN.CENTER)
-etiquette(s, "Mako · 1,5 min")
-notes(s, "Durée prévue : 1 minute 30. Qui parle : Mako.\n"
+notes(s, "Mako, 1,5 min.\n"
          "Nous avons choisi un schéma en étoile, avec deux tables de faits au centre : les incidents et les observations de sécurité. "
          "Autour d'elles, neuf dimensions. Trois sont communes aux deux faits, en rose : la date, l'heure et la zone. "
          "Les incidents en ont quatre en propre : l'engin, le travailleur, le type et la gravité ; les observations en ont deux : le type d'observation et le rôle du déclarant. "
@@ -228,56 +258,97 @@ notes(s, "Durée prévue : 1 minute 30. Qui parle : Mako.\n"
          "mesures observation_count, is_unsafe, is_near_miss. Dimensions : dim_date 301 jours ; dim_hour 24 heures ; dim_location 25 zones ; dim_equipment 40 engins ; "
          "dim_worker 350 travailleurs ; dim_incident_type 6 types ; dim_severity 4 niveaux ; dim_observation_type 3 types ; dim_reporter_role 3 rôles.")
 
-# ------------------------------------------------------------------ 6. ETL
-s = nouvelle()
-titre(s, "Quatre couches, et aucune ligne perdue en route")
-couches = [("RAW", "5 315", "lignes copiées", VIOLET_FONCE, BLANC), ("STAGING", "0", "rejet", VIOLET, BLANC),
-           ("CORE", "4 900", "faits", VIOLET_CLAIR, BLANC), ("MART", "75", "lignes d'analyse", ROSE, VIOLET_FONCE)]
-for i, (nom, n, l, c, ct) in enumerate(couches):
-    x = 0.6 + i * 3.2
-    forme(s, x, 1.65, 2.7, 3.0, c)
-    texte(s, nom, x, 1.7, 2.7, 0.6, taille=26, couleur=ct, gras=True, align=PP_ALIGN.CENTER)
-    texte(s, n, x, 2.3, 2.7, 1.5, taille=66, couleur=ct, gras=True, align=PP_ALIGN.CENTER)
-    texte(s, l, x, 3.8, 2.7, 0.7, taille=20, couleur=ct, align=PP_ALIGN.CENTER)
-    if i < 3:
-        fleche(s, x + 2.78, 2.85, 0.34, 0.55, FRAMBOISE)
-forme(s, 0.6, 5.0, 12.13, 1.8, BLANC, VIOLET)
-texte(s, [[("Réconciliation : RAW = STAGING + rejets", {"taille": 26, "gras": True, "couleur": VIOLET_FONCE})],
-          [("5 315 = 5 315 + 0", {"taille": 44, "gras": True, "couleur": FRAMBOISE})]], 0.6, 5.0, 12.13, 1.8, align=PP_ALIGN.CENTER)
-etiquette(s, "Mako · 2 min")
-notes(s, "Durée prévue : 2 minutes. Qui parle : Mako.\n"
-         "Notre ETL est un seul script Python qui fait passer les données par quatre couches. RAW garde une copie fidèle : 5 315 lignes. "
-         "STAGING nettoie et contrôle : aucune ligne n'est rejetée sur les données fournies. CORE construit le schéma en étoile avec 4 900 faits. "
-         "MART calcule 75 lignes prêtes pour l'analyse. À chaque run, une réconciliation vérifie que les lignes reçues égalent les lignes rejetées plus les lignes chargées : "
-         "si un écart apparaît, le run s'arrête.")
-
-# ------------------------------------------------------------------ 7. qualité
+# ------------------------------------------------------------------ 7. ETL et qualité (Mako, 3 min)
 s = nouvelle()
 titre(s, "Chaque ligne rejetée est tracée")
-forme(s, 0.6, 1.55, 3.5, 2.75, VIOLET_FONCE)
-texte(s, [[("12", {"taille": 88, "gras": True})], [("règles de qualité", {"taille": 20, "couleur": ROSE, "gras": True})], [("DQ01 à DQ12", {"taille": 18})]],
-      0.6, 1.55, 3.5, 2.75, couleur=BLANC, align=PP_ALIGN.CENTER)
-preuves = [("11 = 11", "anomalies injectées, 11 rejets tracés"), ("2 runs", "idempotence : même base"), ("Rollback", "panne : l'ancienne base reste")]
-for i, (g, l) in enumerate(preuves):
-    x = 4.3 + i * 2.86
-    forme(s, x, 1.55, 2.66, 2.75, BLANC, LAVANDE)
-    texte(s, g, x, 1.65, 2.66, 1.2, taille=40, couleur=VIOLET, gras=True, align=PP_ALIGN.CENTER)
-    texte(s, l, x, 2.9, 2.66, 1.3, taille=20, couleur=TEXTE, align=PP_ALIGN.CENTER, ancrage=MSO_ANCHOR.TOP)
+couches = [("RAW", "5 315 lignes", VIOLET_FONCE, BLANC), ("STAGING", "5 315 propres", VIOLET, BLANC),
+           ("CORE", "4 900 faits", VIOLET_CLAIR, BLANC), ("MART", "75 lignes", ROSE, VIOLET_FONCE)]
+for i, (nom, v, c, ct) in enumerate(couches):
+    x = 0.6 + i * 3.1
+    forme(s, x, 1.45, 2.75, 1.3, c)
+    paras = [[(nom, {"taille": 18, "gras": True})], [(v, {"taille": 24, "gras": True})]]
+    if nom == "STAGING":
+        paras.append([("0 rejet", {"taille": 18, "gras": True})])
+    texte(s, paras, x, 1.45, 2.75, 1.3, couleur=ct, align=PP_ALIGN.CENTER)
+    if i < 3:
+        fleche(s, x + 2.8, 1.9, 0.27, 0.4, FRAMBOISE)
+texte(s, "4 900 faits = 1 400 incidents + 3 500 observations ; les 415 autres lignes alimentent les dimensions",
+      0.6, 2.8, 12.13, 0.6, taille=18, couleur=GRIS, align=PP_ALIGN.CENTER)
+chiffre(s, 0.6, 3.5, 3.9, 1.7, "12", "règles de qualité, DQ01 à DQ12", taille=60, fond_=VIOLET_FONCE, c_grand=ROSE, c_label=BLANC)
+chiffre(s, 4.7, 3.5, 3.9, 1.7, "11 = 11", "anomalies injectées, rejets tracés", taille=60)
+forme(s, 8.8, 3.5, 3.93, 1.7, BLANC, LAVANDE)
+texte(s, [[("Idempotence", {"taille": 26, "gras": True, "couleur": VIOLET})], [("2 runs, même base", {"taille": 18})],
+          [("Rollback", {"taille": 26, "gras": True, "couleur": VIOLET})], [("panne : l'ancienne base reste", {"taille": 18})]],
+      8.8, 3.5, 3.93, 1.7, align=PP_ALIGN.CENTER)
 alertes = [("ALERTE DQ10", "+29,5 %", "mai : 171 incidents contre 132 en avril"), ("ALERTE DQ11", "40 / 40", "engins : home_area sans lien avec les zones")]
 for i, (a, g, l) in enumerate(alertes):
     x = 0.6 + i * 6.2
-    forme(s, x, 4.6, 5.93, 2.2, ROSE_PALE, FRAMBOISE)
-    texte(s, a, x + 0.2, 4.68, 5.5, 0.5, taille=20, couleur=FRAMBOISE, gras=True)
-    texte(s, g, x + 0.2, 5.15, 2.9, 1.1, taille=60, couleur=FRAMBOISE, gras=True)
-    texte(s, l, x + 3.1, 5.15, 2.7, 1.5, taille=18, couleur=TEXTE)
-etiquette(s, "Mako · 2 min")
-notes(s, "Durée prévue : 2 minutes. Qui parle : Mako.\n"
+    forme(s, x, 5.4, 5.93, 1.6, ROSE_PALE, FRAMBOISE)
+    texte(s, a, x + 0.2, 5.45, 5.5, 0.45, taille=20, couleur=FRAMBOISE, gras=True)
+    texte(s, g, x + 0.2, 5.9, 3.0, 1.0, taille=60, couleur=FRAMBOISE, gras=True)
+    texte(s, l, x + 3.2, 5.9, 2.65, 1.0, taille=18, couleur=TEXTE)
+notes(s, "Mako, 3 min.\n"
+         "Notre ETL est un seul script Python qui fait passer les données par quatre couches. RAW garde une copie fidèle des 5 315 lignes. "
+         "STAGING nettoie et contrôle : les 5 315 lignes sont valides, aucune n'est rejetée. CORE construit le schéma en étoile avec 4 900 faits : "
+         "1 400 incidents plus 3 500 observations ; les 415 autres lignes, zones, travailleurs et engins, alimentent les dimensions. MART calcule 75 lignes prêtes pour l'analyse. "
+         "À chaque run, une réconciliation vérifie que les lignes reçues égalent les lignes rejetées plus les lignes chargées : un écart arrête le run.\n"
          "Nous appliquons 12 règles de qualité, de DQ01 à DQ12, alors que le sujet en demandait 6. Les données fournies sont propres, elles ne produisent aucun rejet. "
          "Pour prouver que les contrôles marchent, notre script de test injecte 11 anomalies et obtient 11 rejets tracés, chacun avec sa raison. "
-         "Il prouve aussi que deux runs donnent la même base, et qu'après une panne l'ancienne base reste en place. "
-         "Deux alertes restent : DQ10, le pic de mai à plus 29,5 pour cent, qui est un signal métier, et DQ11, le champ home_area des engins qui ne correspond à aucune zone.")
+         "Il prouve aussi que deux runs donnent la même base, c'est l'idempotence, et qu'après une panne l'ancienne base reste en place, c'est le rollback.\n"
+         "Deux alertes restent. DQ10 : mai compte 171 incidents contre 132 en avril, soit plus 29,5 pour cent ; ce n'est pas une erreur, c'est un signal métier. "
+         "DQ11 : le champ home_area des 40 engins ne correspond à aucune zone ; c'est une limite des données sources.")
 
-# ------------------------------------------------------------------ 8. gouvernance
+# ------------------------------------------------------------------ 8. HDFS (Fatouma, 1,5 min)
+s = nouvelle()
+titre(s, "L'archive HDFS garde l'historique brut en deux exemplaires")
+chiffre(s, 0.6, 1.55, 3.4, 1.7, "23", "fichiers archivés", taille=60)
+chiffre(s, 0.6, 3.45, 3.4, 1.7, "2", "copies de chaque fichier", taille=60)
+forme(s, 4.25, 1.55, 8.48, 3.6, LAVANDE, VIOLET, pointille=True)
+texte(s, "Docker", 4.4, 1.6, 2, 0.45, taille=20, couleur=VIOLET, gras=True)
+forme(s, 6.5, 2.05, 4.0, 1.0, VIOLET_FONCE)
+texte(s, "NameNode", 6.5, 2.05, 4.0, 1.0, taille=28, couleur=BLANC, gras=True, align=PP_ALIGN.CENTER)
+for x in (4.7, 8.5):
+    ligne(s, 8.5, 3.05, x + 1.75, 3.55, epaisseur=4)
+    forme(s, x, 3.55, 3.5, 1.0, VIOLET)
+    texte(s, "DataNode", x, 3.55, 3.5, 1.0, taille=28, couleur=BLANC, gras=True, align=PP_ALIGN.CENTER)
+texte(s, "réplication 2", 4.7, 4.6, 7.3, 0.5, taille=22, couleur=FRAMBOISE, gras=True, align=PP_ALIGN.CENTER)
+pastilles = ["prepare_archive.py", "HDFS", "hdfs_verify.py : MD5", "Parquet : 7 MART"]
+largeurs = [2.8, 1.6, 3.3, 2.7]
+x = 0.6
+for i, (p, w) in enumerate(zip(pastilles, largeurs)):
+    forme(s, x, 5.5, w, 1.0, VIOLET_FONCE if i != 1 else VIOLET)
+    texte(s, p, x, 5.5, w, 1.0, taille=20, couleur=BLANC, gras=True, align=PP_ALIGN.CENTER)
+    if i < 3:
+        fleche(s, x + w + 0.07, 5.8, 0.33, 0.4, FRAMBOISE)
+    x += w + 0.47
+notes(s, "Fatouma, 1,5 min.\n"
+         "HDFS garde l'historique brut, car le Data Warehouse, lui, est reconstruit à chaque run. Notre cluster tourne sous Docker : un NameNode, qui tient l'annuaire, et deux DataNodes, qui stockent les données. "
+         "La réplication est réglée à 2 : chaque fichier existe en deux exemplaires. Notre script prépare une archive de 23 fichiers, un par mois, avec un manifeste d'empreintes MD5. "
+         "Un autre script, hdfs_verify, compare ce qui est dans HDFS au manifeste, et les sept tables MART sont exportées en Parquet.\n"
+         "Attention : ne citer aucun résultat d'exécution (fsck, test d'arrêt d'un DataNode) tant qu'il n'est pas dans le rapport.")
+
+# ------------------------------------------------------------------ 9. KPI et EDA (Fatouma, 2 min)
+s = nouvelle()
+titre(s, "Plus d'un incident sur cinq est grave")
+hauteur = 2.2
+x = 0.6
+for chemin, w in [("07_EDA/figures/01_tendance_mensuelle.png", 4.89), ("07_EDA/figures/03_zones_risque.png", 3.52), ("07_EDA/figures/02_gravite.png", 3.42)]:
+    forme(s, x - 0.05, 1.5, w + 0.1, hauteur + 0.1, BLANC, LAVANDE)
+    image(s, chemin, x, 1.55, h=hauteur)
+    x += w + 0.25
+kpis = [("144,0", None, "incidents par mois"), ("22,3", " %", "incidents graves"), ("95,4", None, "score de la zone LOC015"),
+        ("18,1", " %", "SPILL, type le plus fréquent"), ("4,84", None, "incidents par opérateur, équipe A")]
+for i, (g, u, l) in enumerate(kpis):
+    chiffre(s, 0.6 + i * 2.5, 4.05, 2.3, 2.75, g, l, taille=60, unite=u, fond_=VIOLET_FONCE if i == 1 else BLANC,
+            c_grand=ROSE if i == 1 else VIOLET, c_label=BLANC if i == 1 else GRIS)
+notes(s, "Fatouma, 2 min.\n"
+         "Notre analyse en Python lit seulement les tables MART. Voici trois de nos six graphiques : les incidents par mois, les zones à plus fort risque et la répartition par gravité. "
+         "En moyenne, 144 incidents par mois sur les mois complets, octobre étant exclu car il s'arrête au 28. "
+         "22,3 pour cent des incidents sont graves. La zone LOC015, un parc à conteneurs, a le score de risque le plus élevé, 95,4. "
+         "Le type le plus fréquent est le déversement, SPILL, à 18,1 pour cent, et le groupe le plus touché est celui des opérateurs de l'équipe A, avec 4,84 incidents par travailleur. "
+         "Ce dernier chiffre est un signal à vérifier, pas une preuve.")
+
+# ------------------------------------------------------------------ 10. gouvernance (Mako, 1,5 min)
 s = nouvelle()
 titre(s, "Le worker_id ne quitte jamais la couche confidentielle")
 niveaux = [("Confidentiel", "RAW · STAGING · CORE", "contiennent worker_id", FRAMBOISE, BLANC),
@@ -296,69 +367,13 @@ texte(s, [[("Moindre privilège", {"taille": 26, "gras": True, "couleur": VIOLET
 forme(s, 9.0, 4.45, 3.73, 2.35, BLANC, LAVANDE)
 texte(s, [[("2 propriétaires", {"taille": 26, "gras": True, "couleur": VIOLET})], [("HSE (métier)", {"taille": 20})], [("data engineer (technique)", {"taille": 20})]],
       9.0, 4.45, 3.73, 2.35, align=PP_ALIGN.CENTER)
-etiquette(s, "Mako · 1,5 min")
-notes(s, "Durée prévue : 1 minute 30. Qui parle : Mako.\n"
+notes(s, "Mako, 1,5 min.\n"
          "Une seule colonne est sensible : worker_id, l'identifiant du travailleur. Elle reste dans les couches confidentielles. "
          "Les tables MART et le dashboard ne contiennent que des agrégats. Nous appliquons le moindre privilège, mais disons-le clairement : "
          "c'est une politique écrite, SQLite ne gère pas les droits par utilisateur. Le lineage décrit 36 liens, ce qui permet de retrouver l'origine de chaque chiffre. "
          "Le propriétaire métier est le service HSE, le propriétaire technique est le data engineer.")
 
-# ------------------------------------------------------------------ 9. HDFS
-s = nouvelle()
-titre(s, "L'archive HDFS garde l'historique brut en deux exemplaires")
-chiffre(s, 0.6, 1.55, 3.4, 1.7, "23", "fichiers archivés", taille=60)
-chiffre(s, 0.6, 3.45, 3.4, 1.7, "2", "copies de chaque fichier", taille=60)
-forme(s, 4.25, 1.55, 5.3, 3.6, LAVANDE, VIOLET, pointille=True)
-texte(s, "Docker", 4.35, 1.58, 2, 0.4, taille=18, couleur=VIOLET, gras=True)
-forme(s, 5.5, 2.0, 2.8, 0.85, VIOLET_FONCE)
-texte(s, "NameNode", 5.5, 2.0, 2.8, 0.85, taille=22, couleur=BLANC, gras=True, align=PP_ALIGN.CENTER)
-for x in (4.5, 7.1):
-    ligne(s, 6.9, 2.85, x + 1.1, 3.55)
-    forme(s, x, 3.55, 2.2, 0.85, VIOLET)
-    texte(s, "DataNode", x, 3.55, 2.2, 0.85, taille=22, couleur=BLANC, gras=True, align=PP_ALIGN.CENTER)
-texte(s, "réplication 2", 4.5, 4.45, 4.8, 0.55, taille=20, couleur=FRAMBOISE, gras=True, align=PP_ALIGN.CENTER)
-forme(s, 9.8, 1.55, 2.93, 3.6, ROSE_PALE, FRAMBOISE, pointille=True)
-texte(s, [[("CAPTURE À AJOUTER", {"taille": 20, "gras": True, "couleur": FRAMBOISE})], [("résultat de fsck ou page du NameNode (Fatouma)", {"taille": 18, "couleur": TEXTE})]],
-      9.8, 1.55, 2.93, 3.6, align=PP_ALIGN.CENTER)
-pastilles = ["prepare_archive.py", "HDFS", "hdfs_verify.py : MD5", "Parquet : 7 MART"]
-largeurs = [2.8, 1.6, 3.3, 2.7]
-x = 0.6
-for i, (p, w) in enumerate(zip(pastilles, largeurs)):
-    forme(s, x, 5.5, w, 1.0, VIOLET_FONCE if i != 1 else VIOLET)
-    texte(s, p, x, 5.5, w, 1.0, taille=20, couleur=BLANC, gras=True, align=PP_ALIGN.CENTER)
-    if i < 3:
-        fleche(s, x + w + 0.07, 5.8, 0.33, 0.4, FRAMBOISE)
-    x += w + 0.47
-etiquette(s, "Fatouma · 1,5 min")
-notes(s, "Durée prévue : 1 minute 30. Qui parle : Fatouma.\n"
-         "HDFS garde l'historique brut, car le Data Warehouse, lui, est reconstruit à chaque run. Notre cluster tourne sous Docker : un NameNode, qui tient l'annuaire, et deux DataNodes, qui stockent les données. "
-         "La réplication est réglée à 2. Notre script prépare une archive de 23 fichiers, un par mois, avec un manifeste d'empreintes MD5. "
-         "Un autre script, hdfs_verify, compare ce qui est dans HDFS au manifeste, et les sept tables MART sont exportées en Parquet. "
-         "[À compléter par Fatouma : commenter la capture des résultats fsck et du test d'arrêt d'un DataNode, une fois ajoutée.]")
-
-# ------------------------------------------------------------------ 10. EDA et KPI
-s = nouvelle()
-titre(s, "Plus d'un incident sur cinq est grave")
-hauteur = 2.2
-x = 0.6
-for chemin, w in [("07_EDA/figures/01_tendance_mensuelle.png", 4.89), ("07_EDA/figures/03_zones_risque.png", 3.52), ("07_EDA/figures/02_gravite.png", 3.42)]:
-    forme(s, x - 0.05, 1.5, w + 0.1, hauteur + 0.1, BLANC, LAVANDE)
-    image(s, chemin, x, 1.55, h=hauteur)
-    x += w + 0.25
-kpis = [("144,0", None, "incidents par mois"), ("22,3", " %", "incidents graves"), ("95,4", None, "score de la zone LOC015"),
-        ("18,1", " %", "SPILL, type le plus fréquent"), ("4,84", None, "incidents par opérateur, équipe A")]
-for i, (g, u, l) in enumerate(kpis):
-    chiffre(s, 0.6 + i * 2.5, 4.05, 2.3, 2.75, g, l, taille=60, unite=u, fond_=VIOLET_FONCE if i == 1 else BLANC,
-            c_grand=ROSE if i == 1 else VIOLET, c_label=BLANC if i == 1 else GRIS)
-etiquette(s, "Fatouma · 2 min")
-notes(s, "Durée prévue : 2 minutes. Qui parle : Fatouma.\n"
-         "Notre analyse en Python lit seulement les tables MART. Voici trois de nos six graphiques : les incidents par mois, les zones à plus fort risque et la répartition par gravité. "
-         "En moyenne, 144 incidents par mois sur les mois complets, octobre étant exclu car il s'arrête au 28. "
-         "22,3 pour cent des incidents sont graves. La zone LOC015, un parc à conteneurs, a le score de risque le plus élevé, 95,4. "
-         "Le type le plus fréquent est le déversement, SPILL, à 18,1 pour cent, et le groupe le plus touché est celui des opérateurs de l'équipe A, avec 4,84 incidents par travailleur. "
-         "Ce dernier chiffre est un signal à vérifier, pas une preuve.")
-
-# ------------------------------------------------------------------ 11. démo
+# ------------------------------------------------------------------ 11. démonstration (Fatouma 1 min puis Mako 1 min)
 s = nouvelle()
 titre(s, "Le dashboard est en ligne : démonstration en deux minutes")
 forme(s, 0.55, 1.5, 7.2, 3.45, BLANC, LAVANDE)
@@ -375,17 +390,17 @@ forme(s, 8.6, 5.2, 4.13, 0.7, VIOLET_FONCE)
 texte(s, "Plan B : ces captures et le PDF", 8.6, 5.2, 4.13, 0.7, taille=20, couleur=BLANC, gras=True, align=PP_ALIGN.CENTER)
 forme(s, 0.6, 6.15, 12.13, 0.75, ROSE_PALE, ROSE)
 texte(s, "https://projet11-port-safety.streamlit.app/", 0.6, 6.15, 12.13, 0.75, taille=28, couleur=VIOLET_FONCE, gras=True, align=PP_ALIGN.CENTER)
-etiquette(s, "Fatouma puis Mako · 2 min")
-notes(s, "Durée prévue : 2 minutes. Qui parle : Fatouma pour les filtres et les cartes, puis Mako pour la section qualité.\n"
-         "Nous ouvrons le dashboard à l'adresse affichée. Fatouma : en haut, trois filtres, la période, les types de zone et les équipes, puis les huit cartes KPI et les six graphiques. "
-         "Mako : tout en bas, la section Qualité des données montre les 12 règles avec leur statut en couleur, le dernier run et l'explication des deux alertes. "
+notes(s, "Fatouma 1 min, puis Mako 1 min (2 min en tout).\n"
+         "Fatouma : nous ouvrons le dashboard à l'adresse affichée. En haut, trois filtres, la période, les types de zone et les équipes, puis les huit cartes KPI et les six graphiques. "
+         "Je change la période et je montre que les graphiques suivent.\n"
+         "Mako : tout en bas, la section Qualité des données montre les 12 règles avec leur statut en couleur, le dernier run de l'ETL et l'explication des deux alertes. "
          "Plan B si le réseau coupe : nous montrons les captures de cette slide, qui sont celles du dashboard, et nous avons le PDF de la présentation.")
 
-# ------------------------------------------------------------------ 12. recommandations
+# ------------------------------------------------------------------ 12. conclusion (Fatouma 1 min puis Mako 0,5 min)
 s = nouvelle(VIOLET_FONCE)
 titre(s, "Cinq actions pour le service HSE, et des limites assumées", BLANC)
 actions = [("OÙ", "Rondes renforcées sur LOC015 et LOC014"), ("QUAND", "Chercher la cause du pic de mai"),
-           ("QUI", "Briefings pour les opérateurs de l'équipe A"), ("GRAVITÉ", "Objectif de baisse des 22,3 % de graves"),
+           ("QUI", "Briefings pour les opérateurs de l'équipe A"), ("GRAVITÉ", "Réduire la part de 22,3 % d'incidents graves"),
            ("SIGNAUX FAIBLES", "Encourager la déclaration des near-miss")]
 for i, (t, d) in enumerate(actions):
     x = 0.6 + i * 2.5
@@ -399,10 +414,9 @@ for i, (t, w) in enumerate([("données synthétiques", 3.0), ("petit volume", 2.
     forme(s, x, 5.15, w, 0.8, LAVANDE)
     texte(s, t, x, 5.15, w, 0.8, taille=18, couleur=VIOLET_FONCE, gras=True, align=PP_ALIGN.CENTER)
 texte(s, "Merci de votre attention. Questions ?", 0.6, 6.25, 12.13, 0.7, taille=28, couleur=ROSE, gras=True, align=PP_ALIGN.CENTER)
-etiquette(s, "Fatouma (actions), Mako (limites et conclusion) · 1,5 min", "D9C8EA")
-notes(s, "Durée prévue : 1 minute 30. Qui parle : Fatouma pour les actions, Mako pour les limites et la conclusion.\n"
+notes(s, "Fatouma 1 min (les actions), puis Mako 0,5 min (les limites et la conclusion) ; 1,5 min en tout.\n"
          "Fatouma : nos données conduisent à cinq actions. Où : renforcer les rondes sur LOC015 et LOC014, les deux parcs à conteneurs. Quand : chercher la cause du pic de mai. "
-         "Qui : un briefing renforcé pour les opérateurs de l'équipe A. Gravité : fixer un objectif sur les 22,3 pour cent d'incidents graves. Signaux faibles : encourager la déclaration des near-miss.\n"
+         "Qui : un briefing renforcé pour les opérateurs de l'équipe A. Gravité : réduire la part de 22,3 pour cent d'incidents graves. Signaux faibles : encourager la déclaration des near-miss.\n"
          "Mako : les limites sont claires. Les données sont synthétiques, le volume est petit, et le champ home_area des engins ne correspond à aucune zone. "
          "Ces recommandations montrent le type de décision que le dispositif permet. Merci, nous sommes prêtes à répondre à vos questions.")
 
