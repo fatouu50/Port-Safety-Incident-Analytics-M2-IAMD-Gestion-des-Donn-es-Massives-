@@ -151,11 +151,11 @@ texte(s, [[("Mako Mohamed Aden  et  Fatouma Soubere Mahamoud", {"gras": True, "t
       1.1, 5.05, 11.2, 1.45, couleur=BLANC)
 notes(s, "Mako, 0,5 min.\n"
          "Bonjour, nous présentons le projet 11, Port Safety & Incident Analytics, réalisé avec Fatouma en Master 2 IAMD. "
-         "Je présente l'architecture, le Data Warehouse, l'ETL avec la qualité des données, et la gouvernance. Fatouma présente le contexte, les données, le SQL, HDFS et l'analyse. "
+         "Je présente le contexte, l'architecture, le Data Warehouse, l'ETL avec la qualité des données, et la gouvernance. Fatouma présente les données, le SQL, HDFS et l'analyse. "
          "Nous vous montrerons aussi le dashboard en ligne.\n"
-         "Répartition du temps : Mako environ 9,5 minutes, Fatouma environ 9 minutes, soit 18,5 minutes en tout, puis 5 minutes de questions.")
+         "Répartition du temps : Mako environ 10,5 minutes, Fatouma environ 8 minutes, soit 18,5 minutes en tout, puis 5 minutes de questions.")
 
-# ------------------------------------------------------------------ 2. problématique (Fatouma, 1 min)
+# ------------------------------------------------------------------ 2. problématique (Mako, 1 min)
 s = nouvelle()
 titre(s, "Problématique métier", "Le service HSE a des fichiers, pas encore de réponses")
 noms = ["incidents.csv", "safety_observations.csv", "locations.csv", "workers_synthetic.csv", "equipment.csv"]
@@ -168,12 +168,22 @@ fleche(s, 5.15, 3.75, 0.9, 0.7, ROSE)
 forme(s, 6.3, 1.75, 6.43, 4.8, VIOLET_FONCE)
 texte(s, [[("Où, quand, comment et à qui arrivent les incidents ?", {"taille": 36, "gras": True})]], 6.6, 2.0, 5.85, 3.2, couleur=BLANC)
 texte(s, "Service HSE : Hygiène, Sécurité, Environnement", 6.6, 5.3, 5.85, 0.9, taille=20, couleur=ROSE)
-notes(s, "Fatouma, 1 min.\n"
+notes(s, "Mako, 1 min.\n"
          "Le service HSE est chargé de la sécurité des personnes sur un terminal portuaire. Il dispose de cinq fichiers CSV : deux listent des événements, "
          "les incidents et les observations, et trois décrivent le site, les zones, les travailleurs et les engins. "
          "Tels quels, ils ne répondent à rien. Notre question est donc : où, quand, comment et à qui arrivent les incidents ?")
 
-# ------------------------------------------------------------------ 3. données et 5V (Fatouma, 1 min)
+# ------------------------------------------------------------------ 3. architecture (Mako, 1,5 min)
+s = nouvelle()
+titre(s, "Architecture générale", "Des fichiers CSV aux décisions HSE, en six blocs")
+image(s, "09_PRESENTATION/architecture_simplifiee.png", 0.5, 1.6, w=12.33)
+notes(s, "Mako, 1,5 min.\n"
+         "Voici toute la chaîne en six blocs. Les cinq fichiers CSV alimentent le Data Warehouse, qui compte quatre couches. "
+         "Les mêmes sources sont aussi archivées dans HDFS pour garder l'historique brut. "
+         "À partir du Data Warehouse, on fait deux choses : l'analyse exploratoire en Python et le dashboard en ligne. "
+         "Tout cela sert un seul but : les décisions du service HSE. Je passe maintenant la parole à Fatouma, qui va présenter les données.")
+
+# ------------------------------------------------------------------ 4. données et 5V (Fatouma, 1 min)
 s = nouvelle()
 titre(s, "Données et 5V", "5 315 lignes : un petit jeu d'enseignement, assumé")
 forme(s, 0.6, 1.5, 12.13, 1.65, VIOLET_FONCE)
@@ -188,20 +198,10 @@ for i, (v, t) in enumerate(cinq_v):
     forme(s, 0.6 + i * 2.5, 5.5, 2.3, 1.3, LAVANDE)
     texte(s, [[(v, {"gras": True, "couleur": VIOLET_FONCE, "taille": 20})], [(t, {"taille": 18, "couleur": TEXTE})]], 0.6 + i * 2.5, 5.5, 2.3, 1.3, align=PP_ALIGN.CENTER)
 notes(s, "Fatouma, 1 min.\n"
-         "Nos données comptent 5 315 lignes : 1 400 incidents, 3 500 observations, 25 zones, 350 travailleurs et 40 engins. "
+         "Merci Mako. Nos données comptent 5 315 lignes : 1 400 incidents, 3 500 observations, 25 zones, 350 travailleurs et 40 engins. "
          "Soyons francs : le volume est petit, 260 kilo-octets, c'est un jeu d'enseignement et non du vrai Big Data. "
          "Nous appliquons donc les méthodes du cours, avec une architecture pensée pour un historique qui grandit. "
          "Sur les 5V, la vélocité est une hypothèse de notre part : le jeu est statique, nous traitons par lot.")
-
-# ------------------------------------------------------------------ 4. architecture (Mako, 1,5 min)
-s = nouvelle()
-titre(s, "Architecture générale", "Des fichiers CSV aux décisions HSE, en six blocs")
-image(s, "09_PRESENTATION/architecture_simplifiee.png", 0.5, 1.6, w=12.33)
-notes(s, "Mako, 1,5 min.\n"
-         "Voici toute la chaîne en six blocs. Les cinq fichiers CSV alimentent le Data Warehouse, qui compte quatre couches. "
-         "Les mêmes sources sont aussi archivées dans HDFS pour garder l'historique brut. "
-         "À partir du Data Warehouse, on fait deux choses : l'analyse exploratoire en Python et le dashboard en ligne. "
-         "Tout cela sert un seul but : les décisions du service HSE. Je vais détailler le Data Warehouse, l'ETL et la gouvernance ; Fatouma détaillera le SQL, HDFS et l'analyse.")
 
 # ------------------------------------------------------------------ 5. SQL / modèle source (Fatouma, 1,5 min)
 s = nouvelle()
@@ -238,6 +238,7 @@ notes(s, "Fatouma, 1,5 min.\n"
          "Nous avons écrit 15 requêtes, qui couvrent les quatre techniques du sujet. Les jointures (requête Q02 bis) : on vérifie qu'une jointure ne multiplie pas les lignes, 1 400 avant et après, donc aucun doublon. "
          "Les agrégations (requête Q05 bis) : 144,0 incidents par mois complet. Les CTE (requête Q11) : on compare chaque mois au précédent avec la fonction LAG, et on trouve +29,5 % en mai. "
          "Enfin, le KPI de gravité (requête Q06) : 22,3 % d'incidents graves. Ces chiffres sont ensuite retrouvés à l'identique dans le Data Warehouse, c'est une vérification croisée.\n"
+         "Je passe maintenant la parole à Mako, qui va présenter le Data Warehouse.\n"
          "Source : 03_SQL/schema_sources.sql, 03_SQL/starter_queries.sql, section 3 du rapport.")
 
 # ------------------------------------------------------------------ 6. Data Warehouse (Mako, 1,5 min)
@@ -251,7 +252,7 @@ forme(s, 0.6, 5.8, 12.13, 1.0, VIOLET_FONCE)
 texte(s, [[("Grain : ", {"taille": 26, "couleur": ROSE, "gras": True}), ("1 ligne = 1 événement", {"taille": 26, "gras": True})]],
       0.6, 5.8, 12.13, 1.0, couleur=BLANC, align=PP_ALIGN.CENTER)
 notes(s, "Mako, 1,5 min.\n"
-         "Nous avons choisi un schéma en étoile, avec deux tables de faits au centre : les incidents et les observations de sécurité. "
+         "Merci Fatouma. Nous avons choisi un schéma en étoile, avec deux tables de faits au centre : les incidents et les observations de sécurité. "
          "Autour d'elles, neuf dimensions. Trois sont communes aux deux faits, en rose : la date, l'heure et la zone. "
          "Les incidents en ont quatre en propre : l'engin, le travailleur, le type et la gravité ; les observations en ont deux : le type d'observation et le rôle du déclarant. "
          "Le grain est le plus fin possible : une ligne par événement. Les deux faits ne sont jamais joints directement, ils se rejoignent par les dimensions communes.\n"
