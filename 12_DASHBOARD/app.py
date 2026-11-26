@@ -156,143 +156,152 @@ if not equipes_choisies:
     equipes_choisies = equipes
 
 # ---------------------------------------------------------------------
-# Les cartes KPI
+# Les 3 KPI du haut, issus de la partie SQL (Q05 bis, Q06, Q07)
+# Mêmes calculs, lus dans les tables MART
 # ---------------------------------------------------------------------
-titres = {
-    "KPI1": "Incidents par mois", "KPI2": "Incidents graves", "KPI3": "Zone la plus à risque",
-    "KPI4": "Near-miss", "KPI5": "Type le plus fréquent (SPILL)", "KPI6": "Groupe le plus exposé",
-    "KPI7": "Observations UNSAFE", "KPI8": "Total des incidents",
-}
-kpi_alerte = ["KPI2", "KPI3"]   # icône et valeur framboise : ce qui doit attirer l'œil
-kpi = pd.read_sql_query("SELECT * FROM mart_kpi_summary ORDER BY kpi_id", con).set_index("kpi_id")
+mois_tous = pd.read_sql_query("SELECT * FROM mart_incidents_month ORDER BY mois", con)
+nm_tous = pd.read_sql_query("SELECT * FROM mart_near_miss ORDER BY mois", con)
+
+kpi_moyenne = mois_tous[mois_tous["mois_complet"] == 1]["nb_incidents"].mean()          # Q05 bis
+kpi_graves = 100 * mois_tous["nb_graves"].sum() / mois_tous["nb_incidents"].sum()       # Q06
+kpi_near_miss = nm_tous["near_miss_total"].sum()                                         # Q07
 
 
-def carte_kpi(colonne, kpi_id):
+def carte_kpi(colonne, icone, titre, valeur, unite, alerte=False):
     """Affiche une carte : icône à gauche, titre, valeur et unité à droite."""
-    ligne = kpi.loc[kpi_id]
-    classe = "carte alerte" if kpi_id in kpi_alerte else "carte"
-    valeur = f"{ligne['valeur']:g}".replace(".", ",")
+    classe = "carte alerte" if alerte else "carte"
     colonne.markdown(
-        f'<div class="{classe}" title="{ligne["libelle"]}"><div class="ligne">'
-        f'<div class="icone">{ICONES[kpi_id]}</div>'
-        f'<div><div class="titre">{titres[kpi_id]}</div>'
+        f'<div class="{classe}"><div class="ligne">'
+        f'<div class="icone">{ICONES[icone]}</div>'
+        f'<div><div class="titre">{titre}</div>'
         f'<div class="valeur">{valeur}</div>'
-        f'<div class="unite">{ligne["unite"]}</div></div>'
+        f'<div class="unite">{unite}</div></div>'
         f'</div></div>',
         unsafe_allow_html=True,
     )
 
 
-for colonne, kpi_id in zip(st.columns(4), ["KPI1", "KPI2", "KPI3", "KPI4"]):
-    carte_kpi(colonne, kpi_id)
+k1, k2, k3 = st.columns(3)
+carte_kpi(k1, "KPI1", "Incidents par mois", f"{kpi_moyenne:.1f}".replace(".", ","), "moyenne des 9 mois complets (Q05 bis)")
+carte_kpi(k2, "KPI2", "Incidents graves", f"{kpi_graves:.1f}".replace(".", ",") + " %", "HIGH + CRITICAL (Q06)", alerte=True)
+carte_kpi(k3, "KPI4", "Near-miss", f"{kpi_near_miss}", "incidents + observations (Q07)")
 
 # ---------------------------------------------------------------------
-# Ligne 1 : évolution mensuelle, near-miss, gravité
+# Les 6 graphiques de l'EDA (07_EDA/eda_projet11.ipynb), sur 2 lignes de 3
 # ---------------------------------------------------------------------
+mois = mois_tous[(mois_tous["mois"] >= debut) & (mois_tous["mois"] <= fin)]   # slicer « Période »
+nm = nm_tous[(nm_tous["mois"] >= debut) & (nm_tous["mois"] <= fin)].copy()    # slicer « Période »
+
 case_1, case_2, case_3 = st.columns(3)
 
-mois = pd.read_sql_query("SELECT * FROM mart_incidents_month ORDER BY mois", con)
-mois = mois[(mois["mois"] >= debut) & (mois["mois"] <= fin)]          # slicer « Période »
-near_miss = pd.read_sql_query("SELECT * FROM mart_near_miss ORDER BY mois", con)
-near_miss = near_miss[(near_miss["mois"] >= debut) & (near_miss["mois"] <= fin)]
-
+# Graphique 1 : incidents par mois
 with case_1.container(border=True):
-    st.markdown('<div class="titre-graphe">Incidents par mois</div>', unsafe_allow_html=True)
+    st.markdown('<div class="titre-graphe">Incidents par mois en 2026 (octobre incomplet, en gris)</div>', unsafe_allow_html=True)
     moyenne = mois[mois["mois_complet"] == 1]["nb_incidents"].mean()
     couleurs = [ROSE if complet == 1 else GRIS_INCOMPLET for complet in mois["mois_complet"]]
-    fig, ax = plt.subplots(figsize=(5, 3.2))
-    ax.bar(mois["mois"].str[5:], mois["nb_incidents"], color=couleurs, label="Incidents")
-    ax.bar(mois["mois"].str[5:], mois["nb_graves"], color=VIOLET_FONCE, label="dont graves")
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+    ax.bar(mois["mois"], mois["nb_incidents"], color=couleurs, label="Incidents")
+    ax.bar(mois["mois"], mois["nb_graves"], color=VIOLET_FONCE, label="dont graves (HIGH + CRITICAL)")
     if pd.notna(moyenne):   # pas de moyenne si la période ne contient que le mois incomplet
-        ax.axhline(moyenne, color=VIOLET, linestyle="--", linewidth=1, label=f"Moyenne ({moyenne:.0f})")
-    ax.set_ylim(0, mois["nb_incidents"].max() * 1.3)
+        ax.axhline(moyenne, color=VIOLET, linestyle="--", label=f"Moyenne des mois complets ({moyenne:.0f})")
+    ax.set_ylabel("Nombre d'incidents")
+    ax.set_ylim(0, mois["nb_incidents"].max() * 1.35)
+    ax.tick_params(axis="x", rotation=45)
+    ax.legend(frameon=False, fontsize=7)
     ax.spines[["top", "right"]].set_visible(False)
-    ax.legend(frameon=False, fontsize=7, ncol=3, loc="upper left")
+    fig.tight_layout()
     st.pyplot(fig)
-    st.caption("Octobre (gris) s'arrête au 28 : incomplet.")
 
+# Graphique 2 : répartition par gravité
 with case_2.container(border=True):
-    st.markdown('<div class="titre-graphe">Near-miss et incidents graves</div>', unsafe_allow_html=True)
-    fig, ax = plt.subplots(figsize=(5, 3.2))
-    ax.plot(near_miss["mois"].str[5:], near_miss["near_miss_total"], color=ROSE, marker="o", linewidth=2, label="Near-miss")
-    ax.plot(near_miss["mois"].str[5:], near_miss["incidents_graves"], color=VIOLET_FONCE, marker="o", linewidth=2, label="Incidents graves")
-    ax.set_ylim(0, near_miss["near_miss_total"].max() * 1.3)
-    ax.spines[["top", "right"]].set_visible(False)
-    ax.legend(frameon=False, fontsize=7, ncol=2, loc="upper left")
-    st.pyplot(fig)
-    ratio = near_miss["near_miss_total"].sum() / near_miss["incidents_graves"].sum()
-    st.caption(f"{ratio:.1f}".replace(".", ",") + " near-miss pour 1 incident grave sur la période.")
-
-with case_3.container(border=True):
-    st.markdown('<div class="titre-graphe">Répartition par gravité</div>', unsafe_allow_html=True)
+    st.markdown('<div class="titre-graphe">Répartition des incidents par gravité</div>', unsafe_allow_html=True)
     gravite = pd.read_sql_query("SELECT * FROM mart_severity_distribution", con)
     ordre = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
     gravite = gravite.set_index("severity").loc[ordre].reset_index()
-    fig, ax = plt.subplots(figsize=(5, 3.2))
-    ax.pie(gravite["nb_incidents"], colors=[COULEURS_GRAVITE[g] for g in ordre], startangle=90,
-           counterclock=False, wedgeprops={"width": 0.38, "edgecolor": "white"})
-    etiquettes = [f"{g}  {p:g} %".replace(".", ",") for g, p in zip(gravite["severity"], gravite["pct"])]
-    ax.legend(etiquettes, frameon=False, fontsize=8, loc="center left", bbox_to_anchor=(1, 0.5))
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+    ax.bar(gravite["severity"], gravite["nb_incidents"], color=[COULEURS_GRAVITE[g] for g in ordre])
+    for i, ligne in gravite.iterrows():
+        ax.text(i, ligne["nb_incidents"] + 10, f"{ligne['pct']} %", ha="center", color=VIOLET_FONCE)
+    ax.set_ylabel("Nombre d'incidents")
+    ax.spines[["top", "right"]].set_visible(False)
+    fig.tight_layout()
     st.pyplot(fig)
-    st.caption("Toute la période. Graves = HIGH + CRITICAL.")
 
-# ---------------------------------------------------------------------
-# Ligne 2 : zones à risque, rôles et équipes, types d'incidents
-# ---------------------------------------------------------------------
+# Graphique 3 : top 10 des zones par score de risque
+with case_3.container(border=True):
+    st.markdown('<div class="titre-graphe">Top 10 des zones par score de risque (/100)</div>', unsafe_allow_html=True)
+    zones = pd.read_sql_query("SELECT * FROM mart_incidents_by_area ORDER BY score_risque DESC", con)
+    zones = zones[zones["area_type"].isin(zones_choisies)].head(10)               # slicer « Types de zone »
+    zones = zones.sort_values("score_risque")       # pour barh : la plus risquée en haut
+    etiquettes = zones["location_id"] + " (" + zones["area_type"] + ")"
+    couleurs = [ROSE] * (len(zones) - 1) + [FRAMBOISE]
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+    ax.barh(etiquettes, zones["score_risque"], color=couleurs)
+    for i, (score, graves) in enumerate(zip(zones["score_risque"], zones["nb_graves"])):
+        ax.text(score + 1, i, f"{graves} graves", va="center", color=VIOLET_FONCE)
+    ax.set_xlabel("Score de risque")
+    ax.set_xlim(0, 125)
+    ax.spines[["top", "right"]].set_visible(False)
+    fig.tight_layout()
+    st.pyplot(fig)
+
 case_4, case_5, case_6 = st.columns(3)
 
+# Graphique 4 : heatmap rôle × équipe
 with case_4.container(border=True):
-    st.markdown('<div class="titre-graphe">Top 10 des zones à risque</div>', unsafe_allow_html=True)
-    zones = pd.read_sql_query("SELECT * FROM mart_incidents_by_area ORDER BY score_risque DESC", con)
-    zones = zones[zones["area_type"].isin(zones_choisies)]          # slicer « Types de zone »
-    top = zones.head(10)
-    couleurs = [FRAMBOISE if i == 0 else ROSE for i in range(len(top))]
-    fig, ax = plt.subplots(figsize=(5, 3.6))
-    ax.barh(top["location_id"] + " · " + top["area_type"], top["score_risque"], color=couleurs)
-    ax.invert_yaxis()
-    for i, score in enumerate(top["score_risque"]):
-        ax.text(score + 1, i, f"{score:g}".replace(".", ","), va="center", color=VIOLET_FONCE, fontsize=8)
-    ax.set_xlim(0, 112)
-    ax.spines[["top", "right"]].set_visible(False)
-    st.pyplot(fig)
-    st.caption("Score /100 : 50 % graves, 30 % volume, 20 % UNSAFE.")
-
-with case_5.container(border=True):
-    st.markdown('<div class="titre-graphe">Incidents par travailleur</div>', unsafe_allow_html=True)
+    st.markdown('<div class="titre-graphe">Incidents par travailleur, par rôle et par équipe</div>', unsafe_allow_html=True)
     taux = pd.read_sql_query("SELECT * FROM mart_incident_rate_shift_role", con)
-    taux = taux[taux["shift"].isin(equipes_choisies)]               # slicer « Équipes »
+    taux = taux[taux["shift"].isin(equipes_choisies)]                               # slicer « Équipes »
     tableau = taux.pivot(index="role", columns="shift", values="incidents_par_travailleur")
-    fig, ax = plt.subplots(figsize=(5, 3.6))
-    ax.imshow(tableau, cmap="RdPu", aspect="auto")
-    ax.set_xticks(range(len(tableau.columns)), [f"Équipe {e}" for e in tableau.columns])
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+    image = ax.imshow(tableau.values, cmap="RdPu")
+    fig.colorbar(image, ax=ax, label="Incidents par travailleur")
+    ax.set_xticks(range(len(tableau.columns)), tableau.columns)
     ax.set_yticks(range(len(tableau.index)), tableau.index)
-    for i in range(len(tableau.index)):
-        for j in range(len(tableau.columns)):
-            v = tableau.iloc[i, j]
-            ax.text(j, i, f"{v:.2f}".replace(".", ","), ha="center", va="center",
-                    color="white" if v > tableau.values.mean() else VIOLET_FONCE)
+    moyenne_cases = tableau.values.mean()
+    for ligne in range(tableau.shape[0]):
+        for colonne in range(tableau.shape[1]):
+            valeur = tableau.values[ligne, colonne]
+            couleur_texte = "white" if valeur > moyenne_cases else VIOLET_FONCE
+            ax.text(colonne, ligne, f"{valeur:.2f}", ha="center", va="center", color=couleur_texte)
+    ax.set_xlabel("Équipe")
+    fig.tight_layout()
     st.pyplot(fig)
-    st.caption("Incidents divisés par le nombre de travailleurs du groupe.")
 
-with case_6.container(border=True):
-    st.markdown('<div class="titre-graphe">Types d\'incidents</div>', unsafe_allow_html=True)
-    types = pd.read_sql_query("SELECT * FROM mart_recurring_incident_type ORDER BY rang", con)
-    fig, ax = plt.subplots(figsize=(5, 3.6))
-    couleurs = [FRAMBOISE if i == 0 else VIOLET for i in range(len(types))]
-    ax.bar(types["incident_type"], types["nb_incidents"], color=couleurs)
-    for i, (n, pct) in enumerate(zip(types["nb_incidents"], types["pct"])):
-        ax.text(i, n + 4, f"{pct:g} %".replace(".", ","), ha="center", color=VIOLET_FONCE, fontsize=8)
-    ax.set_ylim(0, types["nb_incidents"].max() * 1.15)
-    ax.tick_params(axis="x", labelsize=6.5)
+# Graphique 5 : near-miss et incidents graves par mois
+with case_5.container(border=True):
+    st.markdown('<div class="titre-graphe">Near-miss et incidents graves par mois</div>', unsafe_allow_html=True)
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+    ax.plot(nm["mois"], nm["near_miss_total"], marker="o", linewidth=2, color=ROSE, label="Near-miss (incidents + observations)")
+    ax.plot(nm["mois"], nm["incidents_graves"], marker="s", linewidth=2, color=VIOLET_FONCE, label="Incidents graves")
+    ax.set_ylabel("Nombre")
+    ax.set_ylim(0, nm["near_miss_total"].max() * 1.2)
+    ax.tick_params(axis="x", rotation=45)
+    ax.legend(frameon=False, fontsize=7)
     ax.spines[["top", "right"]].set_visible(False)
+    fig.tight_layout()
     st.pyplot(fig)
-    st.caption("Toute la période. Les 6 types sont proches : aucun ne domine.")
+    ratio = nm["near_miss_total"].sum() / nm["incidents_graves"].sum()
+    st.caption(f"{ratio:.1f}".replace(".", ",") + " near-miss pour 1 incident grave sur la période.")
 
-# ---------------------------------------------------------------------
-# Bande du bas : les 4 autres KPI
-# ---------------------------------------------------------------------
-for colonne, kpi_id in zip(st.columns(4), ["KPI5", "KPI6", "KPI7", "KPI8"]):
-    carte_kpi(colonne, kpi_id)
+# Graphique 6 : observations UNSAFE et incidents graves, par zone
+with case_6.container(border=True):
+    st.markdown('<div class="titre-graphe">Observations UNSAFE et incidents graves (25 zones)</div>', unsafe_allow_html=True)
+    zones_toutes = pd.read_sql_query("SELECT * FROM mart_incidents_by_area", con)
+    zones_toutes = zones_toutes[zones_toutes["area_type"].isin(zones_choisies)]    # slicer « Types de zone »
+    top4 = zones_toutes.nlargest(4, "nb_graves")
+    fig, ax = plt.subplots(figsize=(6, 4.5))
+    ax.scatter(zones_toutes["pct_unsafe"], zones_toutes["nb_graves"], s=60, color=ROSE)
+    ax.scatter(top4["pct_unsafe"], top4["nb_graves"], s=80, color=FRAMBOISE)
+    for _, zone in top4.iterrows():
+        ax.annotate(zone["location_id"], (zone["pct_unsafe"], zone["nb_graves"]),
+                    xytext=(5, 4), textcoords="offset points", color=VIOLET_FONCE)
+    ax.set_xlabel("% d'observations UNSAFE de la zone")
+    ax.set_ylabel("Incidents graves de la zone")
+    ax.spines[["top", "right"]].set_visible(False)
+    fig.tight_layout()
+    st.pyplot(fig)
+    st.caption(f"Corrélation % UNSAFE / incidents graves : {zones_toutes['pct_unsafe'].corr(zones_toutes['nb_graves']):.2f}".replace(".", ","))
 
 
 # =====================================================================
@@ -407,4 +416,4 @@ st.markdown(
     "</div>", unsafe_allow_html=True)
 
 st.caption("Source : tables MART et suivi qualité du Data Warehouse (données synthétiques). "
-           "Les filtres s'appliquent aux graphiques ; les cartes KPI portent sur toute la période.")
+           "Les filtres s'appliquent aux graphiques ; les 3 KPI et la répartition par gravité portent sur toute la période.")
