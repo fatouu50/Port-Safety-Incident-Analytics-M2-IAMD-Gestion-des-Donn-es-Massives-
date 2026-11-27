@@ -5,6 +5,7 @@ Si la base n'existe pas, elle est construite par 04_ETL/etl_pipeline.py au déma
 Lancement depuis la racine du projet :  streamlit run 12_DASHBOARD/app.py
 """
 import base64
+import html
 import sqlite3
 import subprocess
 import sys
@@ -17,6 +18,7 @@ import streamlit as st
 DOSSIER_DASHBOARD = Path(__file__).resolve().parent
 BASE_DWH = DOSSIER_DASHBOARD.parent / "04_ETL" / "project_11_dwh.db"
 PIPELINE = DOSSIER_DASHBOARD.parent / "04_ETL" / "etl_pipeline.py"
+CATALOGUE_REGLES = DOSSIER_DASHBOARD.parent / "06_GOVERNANCE" / "data_quality_rules.csv"
 LOGO = DOSSIER_DASHBOARD / "assets" / "logo_ud.jpg"
 
 st.set_page_config(page_title="Projet 11 : sécurité portuaire", page_icon="⚓", layout="wide",
@@ -311,6 +313,16 @@ st.markdown('<div class="titre-partie">Qualité des données</div>', unsafe_allo
 
 # Couleurs des statuts qualité (OK et ALERTE : charte ; ECHEC : framboise ; REJETS : violet)
 COULEURS_STATUT = {"OK": "#2E8B57", "ALERTE": "#D99A1B", "ECHEC": "#9E1F5C", "REJETS": "#7B3FA0"}
+# Style du tableau des règles (placé ici pour ne toucher qu'à cette section)
+st.markdown("""
+<style>
+table.regles { width: 100%; table-layout: fixed; border-collapse: collapse; background: #FFFFFF; font-size: 0.85rem; }
+table.regles th, table.regles td { border: 1px solid #E4D6EF; padding: 6px 8px; text-align: left; vertical-align: middle;
+                                   white-space: normal; overflow-wrap: break-word; color: #2B2333; }
+table.regles th { background: #EDE4F5; color: #4A1D6E; font-weight: 700; overflow-wrap: normal; }
+table.regles td.nombre { text-align: right; }
+</style>
+""", unsafe_allow_html=True)
 GRAVITE_STATUT = ["OK", "REJETS", "ALERTE", "ECHEC"]   # du moins grave au plus grave
 
 # Lecture seule (SELECT) : jamais la colonne « record » de stg_rejects (elle contient le worker_id)
@@ -363,11 +375,23 @@ def colorier(statut):
     return f"background-color: {COULEURS_STATUT[statut]}; color: white; font-weight: 600"
 
 
-tableau_regles = regles[["regle", "tables", "echecs", "statut", "detail"]]
-tableau_regles.columns = ["Règle", "Tables contrôlées", "Échecs", "Statut", "Détail"]
-# Hauteur fixée pour afficher les 12 lignes sans barre de défilement (35 px par ligne, plus l'en-tête)
-st.dataframe(tableau_regles.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch",
-             height=35 * (len(tableau_regles) + 1) + 3)
+# Libellé court de chaque règle, écrit en français simple dans le catalogue des règles
+libelles = pd.read_csv(CATALOGUE_REGLES, encoding="utf-8").drop_duplicates("rule_id").set_index("rule_id")["libelle_court"]
+
+# Tableau HTML (et non st.dataframe) : le texte passe à la ligne et les 12 règles s'affichent sans défilement
+colonnes = ["Règle", "Ce que la règle contrôle", "Tables contrôlées", "Échecs", "Statut", "Détail"]
+lignes = []
+for r in regles.itertuples():
+    lignes.append(
+        f"<tr><td><b>{r.regle}</b></td><td>{html.escape(libelles.get(r.regle, ''))}</td>"
+        f"<td class='nombre'>{r.tables}</td><td class='nombre'>{r.echecs}</td>"
+        f"<td style='{colorier(r.statut)}'>{r.statut}</td><td>{html.escape(r.detail)}</td></tr>")
+st.markdown(
+    "<table class='regles'><colgroup><col style='width:7%'><col style='width:27%'><col style='width:11%'>"
+    "<col style='width:7%'><col style='width:9%'><col style='width:39%'></colgroup>"
+    f"<thead><tr>{''.join(f'<th>{c}</th>' for c in colonnes)}</tr></thead>"
+    f"<tbody>{''.join(lignes)}</tbody></table>",
+    unsafe_allow_html=True)
 
 with st.expander("Voir les contrôles ligne par ligne"):
     tableau_dq = dq[["regle", "table_name", "nb_controles", "nb_echecs", "statut", "detail"]]
