@@ -87,7 +87,7 @@ for x_depart, x_arrivee in [(3.9, 4.9), (7.85, 8.3), (11.25, 11.7), (14.65, 15.1
 # Consommation
 boite(ax, 19.0, 12.5, 4.1, 2.5, "EDA (Python)", ["07_EDA/eda_projet11.ipynb", "6 graphiques interprétés", "lit les MART seulement"],
       fond="#FFFFFF", bord=VIOLET)
-boite(ax, 19.0, 9.2, 4.1, 2.9, "DASHBOARD", ["Streamlit, une seule page", "12_DASHBOARD/app.py", "8 cartes KPI, 6 graphiques,",
+boite(ax, 19.0, 9.2, 4.1, 2.9, "DASHBOARD", ["Streamlit, une seule page", "12_DASHBOARD/app.py", "3 KPI et 6 graphiques,",
                                            "section Qualité des données", "lit les MART et le suivi"], fond="#FFFFFF", bord=VIOLET)
 fleche(ax, (18.05, 12.6), (19.0, 13.5))
 fleche(ax, (18.05, 11.2), (19.0, 10.6))
