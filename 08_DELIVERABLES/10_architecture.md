@@ -16,7 +16,7 @@ La figure 8, sur la page suivante, se lit de gauche à droite : les sources trav
 | Data Warehouse | SQLite, Python (pandas) | Contrôler, modéliser, agréger | Un run complet à chaque livraison de sources |
 | Archive | HDFS (Hadoop 3.3.6, Docker) | Conserver l'historique brut et les MART | Après chaque run |
 | Analyse | Notebook Python (pandas, matplotlib) | Graphiques et interprétation | À la demande |
-| Dashboard | Streamlit, une page | Afficher 8 KPI, 6 graphiques et la qualité des données | Lit la base à chaque ouverture |
+| Dashboard | Streamlit, une page | Afficher 3 KPI et 6 graphiques et la qualité des données | Lit la base à chaque ouverture |
 | Suivi | Tables `dq_results`, `etl_run_log` | Tracer les contrôles et les runs | À chaque run |
 
 Le tableau 21 montre des outils simples : SQLite suffit pour 5 315 lignes. *Source : `requirements.txt`. La mise à jour de l'archive est une proposition du groupe.*
@@ -25,7 +25,7 @@ Le tableau 21 montre des outils simples : SQLite suffit pour 5 315 lignes. *Sour
 
 **Figure 8. Architecture finale du projet**
 
-**Le dashboard.** Le dashboard est une application Streamlit, en une seule page, qui se lit de haut en bas : un en-tête et trois filtres (période, types de zone, équipes) ; les 8 cartes KPI, quatre en haut et quatre sous les graphiques ; six graphiques (incidents par mois, near-miss et incidents graves, répartition par gravité, top 10 des zones à risque, incidents par travailleur, types d'incidents) ; puis la section « Qualité des données » (10 règles sur 12 OK, 0 rejet, 2 alertes DQ10 et DQ11, tableau des règles DQ01 à DQ12 avec le statut en couleur, dernier run de l'ETL, explication des deux alertes). Les filtres agissent sur les graphiques concernés : la période sur les deux premiers, les types de zone sur le top 10, les équipes sur la carte de chaleur. Les cartes KPI, la répartition par gravité et les types d'incidents portent sur toute la période. Le dashboard lit les tables MART et les tables de suivi ; il est en ligne à l'adresse https://projet11-port-safety.streamlit.app/ et, si la base n'existe pas au démarrage, il lance le pipeline pour la construire. Les figures 9 et 10 montrent le haut de la page et la section « Qualité des données ». *Source : `12_DASHBOARD/app.py`.*
+**Le dashboard.** Le dashboard est une application Streamlit, en une seule page, qui se lit de haut en bas : un en-tête et trois filtres (période, types de zone, équipes) ; les 3 KPI en haut ; six graphiques (incidents par mois, near-miss et incidents graves, répartition par gravité, top 10 des zones à risque, incidents par travailleur, types d'incidents) ; puis la section « Qualité des données » (10 règles sur 12 OK, 0 rejet, 2 alertes DQ10 et DQ11, tableau des règles DQ01 à DQ12 avec le statut en couleur, dernier run de l'ETL, explication des deux alertes). Les filtres agissent sur les graphiques concernés : la période sur les deux premiers, les types de zone sur le top 10, les équipes sur la carte de chaleur. Les cartes KPI, la répartition par gravité et les types d'incidents portent sur toute la période. Le dashboard lit les tables MART et les tables de suivi ; il est en ligne à l'adresse https://projet11-port-safety.streamlit.app/ et, si la base n'existe pas au démarrage, il lance le pipeline pour la construire. Les figures 9 et 10 montrent le haut de la page et la section « Qualité des données ». *Source : `12_DASHBOARD/app.py`.*
 
 ![Dashboard, haut de la page](images/dashboard_haut.png)
 
