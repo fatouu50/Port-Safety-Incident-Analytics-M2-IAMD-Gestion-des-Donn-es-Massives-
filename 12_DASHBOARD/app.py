@@ -394,9 +394,20 @@ st.markdown(
     unsafe_allow_html=True)
 
 with st.expander("Voir les contrôles ligne par ligne"):
-    tableau_dq = dq[["regle", "table_name", "nb_controles", "nb_echecs", "statut", "detail"]]
-    tableau_dq.columns = ["Règle", "Table", "Contrôles", "Échecs", "Statut", "Détail"]
-    st.dataframe(tableau_dq.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch")
+    # Même présentation que le tableau des règles : texte à la ligne, aucun défilement
+    colonnes_dq = ["Règle", "Table", "Contrôles", "Échecs", "Statut", "Détail"]
+    lignes_dq = []
+    for c in dq.itertuples():
+        lignes_dq.append(
+            f"<tr><td><b>{c.regle}</b></td><td>{html.escape(c.table_name)}</td>"
+            f"<td class='nombre'>{c.nb_controles}</td><td class='nombre'>{c.nb_echecs}</td>"
+            f"<td style='{colorier(c.statut)}'>{c.statut}</td><td>{html.escape(c.detail or '')}</td></tr>")
+    st.markdown(
+        "<table class='regles controles'><colgroup><col style='width:7%'><col style='width:21%'><col style='width:10%'>"
+        "<col style='width:8%'><col style='width:9%'><col style='width:45%'></colgroup>"
+        f"<thead><tr>{''.join(f'<th>{c}</th>' for c in colonnes_dq)}</tr></thead>"
+        f"<tbody>{''.join(lignes_dq)}</tbody></table>",
+        unsafe_allow_html=True)
 
 # --- Dernier run de l'ETL ---
 st.markdown('<div class="section">Dernier run de l\'ETL</div>', unsafe_allow_html=True)
