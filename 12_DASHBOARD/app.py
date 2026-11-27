@@ -18,8 +18,10 @@ DOSSIER_DASHBOARD = Path(__file__).resolve().parent
 BASE_DWH = DOSSIER_DASHBOARD.parent / "04_ETL" / "project_11_dwh.db"
 PIPELINE = DOSSIER_DASHBOARD.parent / "04_ETL" / "etl_pipeline.py"
 LOGO = DOSSIER_DASHBOARD / "assets" / "logo_ud.jpg"
+FOND = DOSSIER_DASHBOARD / "assets" / "fond_port.jpg"
+BATEAU = DOSSIER_DASHBOARD / "assets" / "bateau.jpg"
 
-st.set_page_config(page_title="Projet 11 : sécurité portuaire", page_icon="⚓", layout="wide",
+st.set_page_config(page_title="Projet 11 – Port Safety & Incident Analytics", page_icon="⚓", layout="wide",
                    initial_sidebar_state="collapsed")
 
 
@@ -44,7 +46,24 @@ if not base_prete():
         st.code(resultat.stdout[-1500:] + resultat.stderr[-1500:])
         st.stop()
 
-con = sqlite3.connect(BASE_DWH)
+@st.cache_data(ttl=600)
+def lire(requete):
+    """Lit une requête SQL dans le DWH. Le résultat est gardé en cache 10 min :
+    un clic sur un filtre ne relit pas la base."""
+    with sqlite3.connect(BASE_DWH) as connexion:
+        return pd.read_sql_query(requete, connexion)
+
+
+def afficher(fig):
+    """Affiche une figure matplotlib puis la ferme (sinon la mémoire grossit à chaque clic)."""
+    st.pyplot(fig)
+    plt.close(fig)
+
+
+def filtre_info(texte):
+    """Petite mention sous le titre d'un graphique : quel filtre agit dessus."""
+    st.markdown(f'<div class="filtre-info">{texte}</div>', unsafe_allow_html=True)
+
 
 # Couleurs de la charte graphique (voir README)
 VIOLET_FONCE = "#4A1D6E"
@@ -61,14 +80,29 @@ plt.rcParams.update({"font.size": 9, "axes.edgecolor": "#CFC8D6", "axes.labelcol
 # ---------------------------------------------------------------------
 # Style de la page
 # ---------------------------------------------------------------------
+# Photo de fond : un voile clair par-dessus garde les graphiques lisibles
+fond_base64 = base64.b64encode(FOND.read_bytes()).decode()
+st.markdown(f"""
+<style>
+.stApp {{ background: linear-gradient(rgba(247, 242, 251, 0.82), rgba(247, 242, 251, 0.82)),
+         url("data:image/jpeg;base64,{fond_base64}") center / cover fixed no-repeat; }}
+</style>
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <style>
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"] { display: none; }
-.stApp { background: #F7F2FB; }
-.block-container { padding-top: 1.2rem; max-width: 1400px; }
+/* Barre Streamlit du haut (Fork, GitHub, menu) : masquée, car en ligne elle recouvre le haut de la bannière */
+header[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stMainMenu"],
+[data-testid="stAppDeployButton"], #MainMenu { display: none !important; }
+.block-container { padding-top: 1.8rem; max-width: 1400px; }
 .bandeau { background: linear-gradient(90deg, #4A1D6E 0%, #7B3FA0 60%, #EE82B7 100%); border-radius: 16px;
            padding: 14px 24px; display: flex; align-items: center; gap: 18px; margin-bottom: 14px; }
-.bandeau img { height: 66px; background: #FFFFFF; border-radius: 10px; padding: 4px; }
+.bandeau .texte { flex: 1; }
+.bandeau img.photo { height: 74px; width: 132px; object-fit: cover; border-radius: 10px; border: 2px solid #FFFFFF; }
+.bandeau .photo-vide { height: 74px; width: 132px; border-radius: 10px; border: 2px solid #FFFFFF; font-size: 2.4rem;
+                       display: flex; align-items: center; justify-content: center; }
+.bandeau img.logo { height: 74px; background: #FFFFFF; border-radius: 10px; padding: 4px; }
 .bandeau h1 { color: #FFFFFF; font-size: 1.6rem; margin: 0; padding: 0; letter-spacing: 0.5px; }
 .bandeau p  { color: #FDEEF5; font-size: 0.85rem; margin: 2px 0 0 0; }
 .carte { background: #FFFFFF; border: 1px solid #E4D6EF; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
@@ -85,9 +119,11 @@ st.markdown("""
                 text-align: center; margin-bottom: 4px; }
 .titre-partie { color: #FFFFFF; background: #4A1D6E; border-radius: 10px; padding: 8px 16px; font-weight: 700;
                 text-transform: uppercase; text-align: center; margin-top: 18px; }
+.filtre-info { color: #9E1F5C; font-size: 0.72rem; text-align: center; margin: -2px 0 4px 0; }
 .titre-filtre { color: #4A1D6E; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
 [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .titre-graphe),
-[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"] .titre-filtre) { background: #FFFFFF; border-radius: 14px; }
+[data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"] .titre-filtre),
+[data-testid="stVerticalBlock"]:has(> [data-testid="stLayoutWrapper"] > [data-testid="stHorizontalBlock"] .titre-filtre) { background: #FFFFFF; border-radius: 14px; }
 [data-testid="stButtonGroup"] button { background: #FFFFFF; border-color: #E4D6EF; }
 [data-testid="stButtonGroup"] button p { color: #6B6375; }
 [data-testid="stButtonGroup"] button[aria-pressed="true"] { background: #EE82B7 !important; border-color: #EE82B7 !important; }
@@ -113,23 +149,29 @@ ICONES = {
 # Bandeau du haut : logo, titre, identité du projet
 # ---------------------------------------------------------------------
 logo_base64 = base64.b64encode(LOGO.read_bytes()).decode()
+if BATEAU.exists():
+    photo = f'<img class="photo" src="data:image/jpeg;base64,{base64.b64encode(BATEAU.read_bytes()).decode()}">'
+else:   # tant que l'image n'est pas dans assets/, une ancre la remplace
+    photo = '<div class="photo-vide">⚓</div>'
 st.markdown(f"""
 <div class="bandeau">
-<img src="data:image/jpeg;base64,{logo_base64}">
-<div>
+{photo}
+<div class="texte">
 <h1>SÉCURITÉ PORTUAIRE : TABLEAU DE BORD HSE</h1>
-<p>Université de Djibouti · Master II Artificial Intelligence &amp; Data Science · Gestion des Données Massives</p>
-<p>Projet 11 : Port Safety &amp; Incident Analytics · Mako Mohamed Aden, Fatouma Soubere Mahamoud · données du 1er janvier au 28 octobre 2026</p>
+<p>Université de Djibouti · Master 2 IAMD · Gestion des Données Massives</p>
+<p>Groupe 8 · Mako Mohamed Aden &amp; Fatouma Soubere Mahamoud</p>
+<p>Projet 11 – Port Safety &amp; Incident Analytics · données du 1er janvier au 28 octobre 2026</p>
 </div>
+<img class="logo" src="data:image/jpeg;base64,{logo_base64}">
 </div>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------
 # Les filtres (slicers), dans une barre sous le bandeau
 # ---------------------------------------------------------------------
-mois_dispo = pd.read_sql_query("SELECT mois FROM mart_incidents_month ORDER BY mois", con)["mois"].tolist()
-types_zone = pd.read_sql_query("SELECT DISTINCT area_type FROM mart_incidents_by_area ORDER BY area_type", con)["area_type"].tolist()
-equipes = pd.read_sql_query("SELECT DISTINCT shift FROM mart_incident_rate_shift_role ORDER BY shift", con)["shift"].tolist()
+mois_dispo = lire("SELECT mois FROM mart_incidents_month ORDER BY mois")["mois"].tolist()
+types_zone = lire("SELECT DISTINCT area_type FROM mart_incidents_by_area ORDER BY area_type")["area_type"].tolist()
+equipes = lire("SELECT DISTINCT shift FROM mart_incident_rate_shift_role ORDER BY shift")["shift"].tolist()
 
 with st.container(border=True):
     filtre_1, filtre_2, filtre_3 = st.columns([2, 3, 1.5])
@@ -149,15 +191,17 @@ with st.container(border=True):
 # Si on vide un filtre, on reprend toutes les valeurs (les graphiques ne sont jamais vides)
 if not zones_choisies:
     zones_choisies = types_zone
+    st.caption("Aucun type de zone choisi : tous les types sont affichés.")
 if not equipes_choisies:
     equipes_choisies = equipes
+    st.caption("Aucune équipe choisie : toutes les équipes sont affichées.")
 
 # ---------------------------------------------------------------------
 # Les 3 KPI du haut, issus de la partie SQL (Q05 bis, Q06, Q07)
 # Mêmes calculs, lus dans les tables MART
 # ---------------------------------------------------------------------
-mois_tous = pd.read_sql_query("SELECT * FROM mart_incidents_month ORDER BY mois", con)
-nm_tous = pd.read_sql_query("SELECT * FROM mart_near_miss ORDER BY mois", con)
+mois_tous = lire("SELECT * FROM mart_incidents_month ORDER BY mois")
+nm_tous = lire("SELECT * FROM mart_near_miss ORDER BY mois")
 
 kpi_moyenne = mois_tous[mois_tous["mois_complet"] == 1]["nb_incidents"].mean()          # Q05 bis
 kpi_graves = 100 * mois_tous["nb_graves"].sum() / mois_tous["nb_incidents"].sum()       # Q06
@@ -193,7 +237,8 @@ case_1, case_2, case_3 = st.columns(3)
 
 # Graphique 1 : incidents par mois
 with case_1.container(border=True):
-    st.markdown('<div class="titre-graphe">Incidents par mois en 2026 (octobre incomplet, en gris)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="titre-graphe">Incidents par mois en 2026</div>', unsafe_allow_html=True)
+    filtre_info("filtré par : période")
     moyenne = mois[mois["mois_complet"] == 1]["nb_incidents"].mean()
     couleurs = [ROSE if complet == 1 else GRIS_INCOMPLET for complet in mois["mois_complet"]]
     fig, ax = plt.subplots(figsize=(6, 4.5))
@@ -204,15 +249,16 @@ with case_1.container(border=True):
     ax.set_ylabel("Nombre d'incidents")
     ax.set_ylim(0, mois["nb_incidents"].max() * 1.35)
     ax.tick_params(axis="x", rotation=45)
-    ax.legend(frameon=False, fontsize=7)
+    ax.legend(frameon=False, fontsize=9)
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout()
-    st.pyplot(fig)
+    afficher(fig)
 
 # Graphique 2 : répartition par gravité
 with case_2.container(border=True):
     st.markdown('<div class="titre-graphe">Répartition des incidents par gravité</div>', unsafe_allow_html=True)
-    gravite = pd.read_sql_query("SELECT * FROM mart_severity_distribution", con)
+    filtre_info("toute la période, sans filtre")
+    gravite = lire("SELECT * FROM mart_severity_distribution")
     ordre = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
     gravite = gravite.set_index("severity").loc[ordre].reset_index()
     fig, ax = plt.subplots(figsize=(6, 4.5))
@@ -222,12 +268,13 @@ with case_2.container(border=True):
     ax.set_ylabel("Nombre d'incidents")
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout()
-    st.pyplot(fig)
+    afficher(fig)
 
 # Graphique 3 : top 10 des zones par score de risque
 with case_3.container(border=True):
     st.markdown('<div class="titre-graphe">Top 10 des zones par score de risque (/100)</div>', unsafe_allow_html=True)
-    zones = pd.read_sql_query("SELECT * FROM mart_incidents_by_area ORDER BY score_risque DESC", con)
+    filtre_info("filtré par : types de zone")
+    zones = lire("SELECT * FROM mart_incidents_by_area ORDER BY score_risque DESC")
     zones = zones[zones["area_type"].isin(zones_choisies)].head(10)               # slicer « Types de zone »
     zones = zones.sort_values("score_risque")       # pour barh : la plus risquée en haut
     etiquettes = zones["location_id"] + " (" + zones["area_type"] + ")"
@@ -240,14 +287,15 @@ with case_3.container(border=True):
     ax.set_xlim(0, 125)
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout()
-    st.pyplot(fig)
+    afficher(fig)
 
 case_4, case_5, case_6 = st.columns(3)
 
 # Graphique 4 : heatmap rôle × équipe
 with case_4.container(border=True):
     st.markdown('<div class="titre-graphe">Incidents par travailleur, par rôle et par équipe</div>', unsafe_allow_html=True)
-    taux = pd.read_sql_query("SELECT * FROM mart_incident_rate_shift_role", con)
+    filtre_info("filtré par : équipes")
+    taux = lire("SELECT * FROM mart_incident_rate_shift_role")
     taux = taux[taux["shift"].isin(equipes_choisies)]                               # slicer « Équipes »
     tableau = taux.pivot(index="role", columns="shift", values="incidents_par_travailleur")
     fig, ax = plt.subplots(figsize=(6, 4.5))
@@ -263,28 +311,30 @@ with case_4.container(border=True):
             ax.text(colonne, ligne, f"{valeur:.2f}", ha="center", va="center", color=couleur_texte)
     ax.set_xlabel("Équipe")
     fig.tight_layout()
-    st.pyplot(fig)
+    afficher(fig)
 
 # Graphique 5 : near-miss et incidents graves par mois
 with case_5.container(border=True):
     st.markdown('<div class="titre-graphe">Near-miss et incidents graves par mois</div>', unsafe_allow_html=True)
+    filtre_info("filtré par : période")
     fig, ax = plt.subplots(figsize=(6, 4.5))
     ax.plot(nm["mois"], nm["near_miss_total"], marker="o", linewidth=2, color=ROSE, label="Near-miss (incidents + observations)")
     ax.plot(nm["mois"], nm["incidents_graves"], marker="s", linewidth=2, color=VIOLET_FONCE, label="Incidents graves")
     ax.set_ylabel("Nombre")
     ax.set_ylim(0, nm["near_miss_total"].max() * 1.2)
     ax.tick_params(axis="x", rotation=45)
-    ax.legend(frameon=False, fontsize=7)
+    ax.legend(frameon=False, fontsize=9)
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout()
-    st.pyplot(fig)
+    afficher(fig)
     ratio = nm["near_miss_total"].sum() / nm["incidents_graves"].sum()
     st.caption(f"{ratio:.1f}".replace(".", ",") + " near-miss pour 1 incident grave sur la période.")
 
 # Graphique 6 : observations UNSAFE et incidents graves, par zone
 with case_6.container(border=True):
-    st.markdown('<div class="titre-graphe">Observations UNSAFE et incidents graves (25 zones)</div>', unsafe_allow_html=True)
-    zones_toutes = pd.read_sql_query("SELECT * FROM mart_incidents_by_area", con)
+    st.markdown('<div class="titre-graphe">Observations UNSAFE et incidents graves, par zone</div>', unsafe_allow_html=True)
+    filtre_info("filtré par : types de zone")
+    zones_toutes = lire("SELECT * FROM mart_incidents_by_area")
     zones_toutes = zones_toutes[zones_toutes["area_type"].isin(zones_choisies)]    # slicer « Types de zone »
     top4 = zones_toutes.nlargest(4, "nb_graves")
     fig, ax = plt.subplots(figsize=(6, 4.5))
@@ -297,8 +347,21 @@ with case_6.container(border=True):
     ax.set_ylabel("Incidents graves de la zone")
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout()
-    st.pyplot(fig)
+    afficher(fig)
     st.caption(f"Corrélation % UNSAFE / incidents graves : {zones_toutes['pct_unsafe'].corr(zones_toutes['nb_graves']):.2f}".replace(".", ","))
+
+
+# ---------------------------------------------------------------------
+# Télécharger les données affichées, avec les filtres appliqués
+# ---------------------------------------------------------------------
+st.markdown('<div class="section">Télécharger les données filtrées (CSV)</div>', unsafe_allow_html=True)
+t1, t2, t3 = st.columns(3)
+t1.download_button("Incidents et near-miss par mois", mois.merge(nm, on="mois", how="left").to_csv(index=False).encode("utf-8"),
+                   file_name=f"incidents_par_mois_{debut}_{fin}.csv", mime="text/csv", width="stretch")
+t2.download_button("Zones et score de risque", zones_toutes.sort_values("score_risque", ascending=False).to_csv(index=False).encode("utf-8"),
+                   file_name="zones_score_risque.csv", mime="text/csv", width="stretch")
+t3.download_button("Incidents par rôle et par équipe", taux.to_csv(index=False).encode("utf-8"),
+                   file_name="incidents_role_equipe.csv", mime="text/csv", width="stretch")
 
 
 # =====================================================================
@@ -311,11 +374,9 @@ COULEURS_STATUT = {"OK": "#2E8B57", "ALERTE": "#D99A1B", "ECHEC": "#9E1F5C", "RE
 GRAVITE_STATUT = ["OK", "REJETS", "ALERTE", "ECHEC"]   # du moins grave au plus grave
 
 # Lecture seule (SELECT) : jamais la colonne « record » de stg_rejects (elle contient le worker_id)
-dq = pd.read_sql_query(
-    "SELECT regle, table_name, nb_controles, nb_echecs, statut, detail FROM dq_results ORDER BY regle, table_name", con)
-nb_rejets = pd.read_sql_query("SELECT COUNT(*) AS n FROM stg_rejects", con)["n"][0]
-dernier_run = pd.read_sql_query(
-    "SELECT debut, duree_s, statut, nb_raw, nb_faits, nb_lignes_mart, message FROM etl_run_log ORDER BY debut DESC LIMIT 1", con)
+dq = lire("SELECT regle, table_name, nb_controles, nb_echecs, statut, detail FROM dq_results ORDER BY regle, table_name")
+nb_rejets = lire("SELECT COUNT(*) AS n FROM stg_rejects")["n"][0]
+dernier_run = lire("SELECT debut, duree_s, statut, nb_raw, nb_faits, nb_lignes_mart, message FROM etl_run_log ORDER BY debut DESC LIMIT 1")
 
 # Une ligne par règle : le pire statut de ses contrôles
 dq["gravite"] = dq["statut"].map(GRAVITE_STATUT.index)
@@ -362,12 +423,20 @@ def colorier(statut):
 
 tableau_regles = regles[["regle", "tables", "echecs", "statut", "detail"]]
 tableau_regles.columns = ["Règle", "Tables contrôlées", "Échecs", "Statut", "Détail"]
-st.dataframe(tableau_regles.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch")
+# Hauteur fixée pour afficher les 12 lignes sans barre de défilement (35 px par ligne, plus l'en-tête)
+st.dataframe(tableau_regles.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch",
+             height=35 * (len(tableau_regles) + 1) + 3,
+             column_config={"Règle": st.column_config.TextColumn(width="small"),
+                            "Tables contrôlées": st.column_config.NumberColumn(width="small"),
+                            "Échecs": st.column_config.NumberColumn(width="small"),
+                            "Statut": st.column_config.TextColumn(width="small"),
+                            "Détail": st.column_config.TextColumn(width="large")})
 
 with st.expander("Voir les contrôles ligne par ligne"):
     tableau_dq = dq[["regle", "table_name", "nb_controles", "nb_echecs", "statut", "detail"]]
     tableau_dq.columns = ["Règle", "Table", "Contrôles", "Échecs", "Statut", "Détail"]
-    st.dataframe(tableau_dq.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch")
+    st.dataframe(tableau_dq.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch",
+                 column_config={"Détail": st.column_config.TextColumn(width="large")})
 
 # --- Dernier run de l'ETL ---
 st.markdown('<div class="section">Dernier run de l\'ETL</div>', unsafe_allow_html=True)
