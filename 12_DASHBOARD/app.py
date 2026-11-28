@@ -5,6 +5,7 @@ Si la base n'existe pas, elle est construite par 04_ETL/etl_pipeline.py au déma
 Lancement depuis la racine du projet :  streamlit run 12_DASHBOARD/app.py
 """
 import base64
+import html
 import sqlite3
 import subprocess
 import sys
@@ -17,6 +18,7 @@ import streamlit as st
 DOSSIER_DASHBOARD = Path(__file__).resolve().parent
 BASE_DWH = DOSSIER_DASHBOARD.parent / "04_ETL" / "project_11_dwh.db"
 PIPELINE = DOSSIER_DASHBOARD.parent / "04_ETL" / "etl_pipeline.py"
+CATALOGUE_REGLES = DOSSIER_DASHBOARD.parent / "06_GOVERNANCE" / "data_quality_rules.csv"
 LOGO = DOSSIER_DASHBOARD / "assets" / "logo_ud.jpg"
 FOND = DOSSIER_DASHBOARD / "assets" / "fond_port.jpg"
 BATEAU = DOSSIER_DASHBOARD / "assets" / "bateau.jpg"
@@ -371,6 +373,16 @@ st.markdown('<div class="titre-partie">Qualité des données</div>', unsafe_allo
 
 # Couleurs des statuts qualité (OK et ALERTE : charte ; ECHEC : framboise ; REJETS : violet)
 COULEURS_STATUT = {"OK": "#2E8B57", "ALERTE": "#D99A1B", "ECHEC": "#9E1F5C", "REJETS": "#7B3FA0"}
+# Style du tableau des règles (placé ici pour ne toucher qu'à cette section)
+st.markdown("""
+<style>
+table.regles { width: 100%; table-layout: fixed; border-collapse: collapse; background: #FFFFFF; font-size: 0.85rem; }
+table.regles th, table.regles td { border: 1px solid #E4D6EF; padding: 6px 8px; text-align: left; vertical-align: middle;
+                                   white-space: normal; overflow-wrap: break-word; color: #2B2333; }
+table.regles th { background: #EDE4F5; color: #4A1D6E; font-weight: 700; overflow-wrap: normal; }
+table.regles td.nombre { text-align: right; }
+</style>
+""", unsafe_allow_html=True)
 GRAVITE_STATUT = ["OK", "REJETS", "ALERTE", "ECHEC"]   # du moins grave au plus grave
 
 # Lecture seule (SELECT) : jamais la colonne « record » de stg_rejects (elle contient le worker_id)

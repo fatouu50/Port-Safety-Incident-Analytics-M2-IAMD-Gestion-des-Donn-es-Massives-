@@ -96,7 +96,7 @@ MART,mart_incidents_by_area,nb_graves,INTEGER,Nombre d'incidents graves dans la 
 MART,mart_incidents_by_area,nb_observations,INTEGER,Nombre d'observations de sécurité dans la zone,121,,NON,Interne,NON,n/a,
 MART,mart_incidents_by_area,nb_unsafe,INTEGER,Nombre d'observations UNSAFE dans la zone,34,,NON,Interne,NON,n/a,
 MART,mart_incidents_by_area,pct_unsafe,REAL,"Part des observations UNSAFE, en %",28.1,,NON,Interne,NON,n/a,
-MART,mart_incidents_by_area,score_risque,REAL,"Score de risque de la zone, de 0 à 100",95.4,,NON,Interne,NON,n/a,"100 x (0,5 x graves + 0,3 x volume + 0,2 x % unsafe), chacun divisé par son maximum; formule à confirmer avec Fatouma"
+MART,mart_incidents_by_area,score_risque,REAL,"Score de risque de la zone, de 0 à 100",95.4,,NON,Interne,NON,n/a,"100 x (0,5 x graves + 0,3 x volume + 0,2 x % unsafe), chacun divisé par son maximum; formule validée par le groupe"
 MART,mart_near_miss,mois,TEXT,Mois au format AAAA-MM,2026-01,PK,NON,Interne,NON,n/a,
 MART,mart_near_miss,near_miss_incidents,INTEGER,Near-miss enregistrés dans les incidents,26,,NON,Interne,NON,n/a,Total 225
 MART,mart_near_miss,near_miss_observations,INTEGER,Near-miss enregistrés dans les observations,54,,NON,Interne,NON,n/a,Total 534

@@ -694,7 +694,7 @@ MARTS["mart_severity_distribution"] = """
     GROUP BY s.severity_key, s.severity
     ORDER BY s.severity_key"""
 
-# KPI3 : zones. Score de risque (formule de Steps, À CONFIRMER avec Fatouma) :
+# KPI3 : zones. Score de risque (formule validée par le groupe) :
 # 100 x (0,5 x graves + 0,3 x volume + 0,2 x % unsafe), chacun divisé par son maximum.
 MARTS["mart_incidents_by_area"] = """
     WITH inc AS (
