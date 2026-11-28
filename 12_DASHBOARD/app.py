@@ -433,22 +433,39 @@ def colorier(statut):
     return f"background-color: {COULEURS_STATUT[statut]}; color: white; font-weight: 600"
 
 
-tableau_regles = regles[["regle", "tables", "echecs", "statut", "detail"]]
-tableau_regles.columns = ["Règle", "Tables contrôlées", "Échecs", "Statut", "Détail"]
-# Hauteur fixée pour afficher les 12 lignes sans barre de défilement (35 px par ligne, plus l'en-tête)
-st.dataframe(tableau_regles.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch",
-             height=35 * (len(tableau_regles) + 1) + 3,
-             column_config={"Règle": st.column_config.TextColumn(width="small"),
-                            "Tables contrôlées": st.column_config.NumberColumn(width="small"),
-                            "Échecs": st.column_config.NumberColumn(width="small"),
-                            "Statut": st.column_config.TextColumn(width="small"),
-                            "Détail": st.column_config.TextColumn(width="large")})
+# Libellé court de chaque règle, écrit en français simple dans le catalogue des règles
+libelles = pd.read_csv(CATALOGUE_REGLES, encoding="utf-8").drop_duplicates("rule_id").set_index("rule_id")["libelle_court"]
+
+# Tableau HTML (et non st.dataframe) : le texte passe à la ligne et les 12 règles s'affichent sans défilement
+colonnes = ["Règle", "Ce que la règle contrôle", "Tables contrôlées", "Échecs", "Statut", "Détail"]
+lignes = []
+for r in regles.itertuples():
+    lignes.append(
+        f"<tr><td><b>{r.regle}</b></td><td>{html.escape(libelles.get(r.regle, ''))}</td>"
+        f"<td class='nombre'>{r.tables}</td><td class='nombre'>{r.echecs}</td>"
+        f"<td style='{colorier(r.statut)}'>{r.statut}</td><td>{html.escape(r.detail)}</td></tr>")
+st.markdown(
+    "<table class='regles'><colgroup><col style='width:7%'><col style='width:27%'><col style='width:11%'>"
+    "<col style='width:7%'><col style='width:9%'><col style='width:39%'></colgroup>"
+    f"<thead><tr>{''.join(f'<th>{c}</th>' for c in colonnes)}</tr></thead>"
+    f"<tbody>{''.join(lignes)}</tbody></table>",
+    unsafe_allow_html=True)
 
 with st.expander("Voir les contrôles ligne par ligne"):
-    tableau_dq = dq[["regle", "table_name", "nb_controles", "nb_echecs", "statut", "detail"]]
-    tableau_dq.columns = ["Règle", "Table", "Contrôles", "Échecs", "Statut", "Détail"]
-    st.dataframe(tableau_dq.style.map(colorier, subset=["Statut"]), hide_index=True, width="stretch",
-                 column_config={"Détail": st.column_config.TextColumn(width="large")})
+    # Même présentation que le tableau des règles : texte à la ligne, aucun défilement
+    colonnes_dq = ["Règle", "Table", "Contrôles", "Échecs", "Statut", "Détail"]
+    lignes_dq = []
+    for c in dq.itertuples():
+        lignes_dq.append(
+            f"<tr><td><b>{c.regle}</b></td><td>{html.escape(c.table_name)}</td>"
+            f"<td class='nombre'>{c.nb_controles}</td><td class='nombre'>{c.nb_echecs}</td>"
+            f"<td style='{colorier(c.statut)}'>{c.statut}</td><td>{html.escape(c.detail or '')}</td></tr>")
+    st.markdown(
+        "<table class='regles controles'><colgroup><col style='width:7%'><col style='width:21%'><col style='width:10%'>"
+        "<col style='width:8%'><col style='width:9%'><col style='width:45%'></colgroup>"
+        f"<thead><tr>{''.join(f'<th>{c}</th>' for c in colonnes_dq)}</tr></thead>"
+        f"<tbody>{''.join(lignes_dq)}</tbody></table>",
+        unsafe_allow_html=True)
 
 # --- Dernier run de l'ETL ---
 st.markdown('<div class="section">Dernier run de l\'ETL</div>', unsafe_allow_html=True)
